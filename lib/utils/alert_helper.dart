@@ -5,20 +5,21 @@ class AlertHelper {
   static void showQuickAlert({
     required BuildContext context,
     required QuickAlertType type,
-    title,
+    String? title, // Permitimos que title sea nulo
     required String text,
-    confirmBtnText,
-    cancelBtnText,
-    confirmBtnColor,
+    String? confirmBtnText, // Permitimos que confirmBtnText sea nulo
+    String? cancelBtnText, // Permitimos que cancelBtnText sea nulo
+    Color? confirmBtnColor, // Permitimos que confirmBtnColor sea nulo
   }) {
     QuickAlert.show(
       context: context,
       type: type,
       title: title,
       text: text,
-      confirmBtnText: confirmBtnText,
-      cancelBtnText: cancelBtnText,
-      confirmBtnColor: confirmBtnColor,
+      confirmBtnText: confirmBtnText ?? 'OK', // Valor predeterminado si es nulo
+      cancelBtnText: cancelBtnText ?? 'Cancelar',
+      confirmBtnColor:
+          confirmBtnColor ?? Colors.blue, // Valor predeterminado si es nulo
     );
   }
 
@@ -30,12 +31,14 @@ class AlertHelper {
     );
   }
 
-  static void showErrorAlert(BuildContext context, String text) {
-    showQuickAlert(
+  static void showErrorAlert(BuildContext context, String message) {
+    QuickAlert.show(
       context: context,
       type: QuickAlertType.error,
-      title: 'Oops...',
-      text: text,
+      title: 'Error',
+      text: message,
+      confirmBtnText: 'OK',
+      confirmBtnColor: Colors.red,
     );
   }
 
@@ -56,7 +59,9 @@ class AlertHelper {
   }
 
   static void showConfirmAlert(BuildContext context, String text,
-      String confirmBtnText, String cancelBtnText, Color confirmBtnColor) {
+      {required String confirmBtnText,
+      required String cancelBtnText,
+      required Color confirmBtnColor}) {
     showQuickAlert(
       context: context,
       type: QuickAlertType.confirm,

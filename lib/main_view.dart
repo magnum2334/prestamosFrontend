@@ -26,7 +26,7 @@ class _MainViewState extends State<MainView> {
               controller: controller,
             );
           } else if (index == 1) {
-            return SingUpScreen(
+            return SignUpScreen(
               controller: controller,
             );
           } else {

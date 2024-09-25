@@ -1,21 +1,25 @@
+// Pantalla de inicio de sesión
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/utils/Alert_helper.dart';
 import 'package:stikev/utils/main_style.dart';
-
-import '../getX/LoginController.dart';
+import 'package:stikev/utils/route_config.dart';
+import 'package:stikev/utils/widgets/custom_elevated_buttom.dart';
+import 'package:stikev/utils/widgets/custom_text_field.dart';
+import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.controller});
   final PageController controller;
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String? apiUrl = 'https://api.example.com';
   final LoginController _loginController = Get.put(LoginController());
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -41,209 +45,145 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       AlertHelper.showErrorAlert(
-          context, 'Please fill in both email and password.');
+        context,
+        'Por favor, completa ambos campos de correo electrónico y contraseña.',
+      );
       return;
     }
 
     try {
-      http.Response response = await http.post(
-        Uri.parse(apiUrl!),
+      var response = await http.post(
+        Uri.parse(AppConfig.authApiUrl),
         body: {
           'email': email,
           'password': password,
         },
       );
-
-      if (response.statusCode == 200) {
+      // Imprimir el código de estado y cuerpo de la respuesta
+      // print('Status code: ${response.statusCode}');
+      // print('Response body: ${response.body}');
+      // print('authApiUrl: ${AppConfig.authApiUrl}');
+      if (response.statusCode == 201) {
+        // Acción en caso de éxito
+        // ignore: use_build_context_synchronously
         AlertHelper.showSuccessAlert(context, 'Login successful');
       } else {
+        // Acción en caso de fallo
         AlertHelper.showErrorAlert(context, 'Login failed. Please try again.');
       }
     } catch (e) {
-      AlertHelper.showErrorAlert(context, 'Error: $e');
+      // En caso de error en la solicitud
+      AlertHelper.showErrorAlert(
+          context, 'Error occurred. Please try again later.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final screenHeight = mediaQuery.size.height;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 15, top: 15),
-            child: Image.asset(
-              "assets/images/vector-1.png",
-              width: 413,
-              height: 407,
-            ),
-          ),
-          const SizedBox(
-            height: 18,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Log In',
-                  style: TextStyle(
-                    color: AppStyles.text,
-                    fontSize: 27,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
+      body: Padding(
+        padding: EdgeInsets.all(screenWidth * 0.01),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: Image.asset(
+                  "assets/images/vector-1.png",
+                  width: screenWidth * 1.5,
+                  height: screenHeight * 0.5,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(
-                  height: 50,
-                ),
-                TextField(
-                  controller: _emailController,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF393939),
-                    fontSize: 13,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w400,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: TextStyle(
-                      color: AppStyles.text,
-                      fontSize: 15,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(
-                        width: 1,
-                        color: Color(0xFF837E93),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(
-                        width: 1,
-                        color: Color(0xFF9F7BFF),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 30,
-                ),
-                TextField(
-                  controller: _passwordController,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF393939),
-                    fontSize: 13,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w400,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: TextStyle(
-                      color: AppStyles.text,
-                      fontSize: 15,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(
-                        width: 1,
-                        color: Color(0xFF837E93),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide(
-                        width: 1,
-                        color: Color(0xFF9F7BFF),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 25,
-                ),
-                ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                  child: SizedBox(
-                    width: 329,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9F7BFF),
-                      ),
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 15,
-                ),
-                Row(
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.06),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Don’t have an account?',
+                    CustomTextField(
+                      controller: _emailController,
+                      labelText: 'Email',
+                      onChanged: (value) {
+                        _loginController.setEmail(value);
+                      },
+                    ),
+                    SizedBox(
+                      height: screenHeight * 0.02,
+                    ),
+                    CustomTextField(
+                      controller: _passwordController,
+                      labelText: 'Password',
+                      obscureText: true,
+                      onChanged: (value) {
+                        _loginController.setPassword(value);
+                      },
+                    ),
+                    SizedBox(
+                      height: screenHeight * 0.03,
+                    ),
+                    CustomElevatedButton(
+                      onPressed: _login,
+                      buttonText: 'Sign In',
+                    ),
+                    SizedBox(
+                      height: screenHeight * 0.02,
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          'Don’t have an account?',
+                          style: TextStyle(
+                            color: Color(0xFF837E93),
+                            fontSize: screenWidth * 0.04,
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(
+                          width: screenWidth * 0.02,
+                        ),
+                        InkWell(
+                          onTap: () {
+                            widget.controller.animateToPage(1,
+                                duration: const Duration(milliseconds: 500),
+                                curve: Curves.ease);
+                          },
+                          child: Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              color: AppStyles.text,
+                              fontSize: screenWidth * 0.04,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: screenHeight * 0.01,
+                    ),
+                    Text(
+                      'Forget Password?',
                       style: TextStyle(
-                        color: Color(0xFF837E93),
-                        fontSize: 13,
+                        color: AppStyles.text,
+                        fontSize: screenWidth * 0.04,
                         fontFamily: 'Poppins',
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(
-                      width: 2.5,
-                    ),
-                    InkWell(
-                      onTap: () {
-                        widget.controller.animateToPage(1,
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.ease);
-                      },
-                      child: const Text(
-                        'Sign Up',
-                        style: TextStyle(
-                          color: AppStyles.text,
-                          fontSize: 13,
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-                const SizedBox(
-                  height: 15,
-                ),
-                const Text(
-                  'Forget Password?',
-                  style: TextStyle(
-                    color: AppStyles.text,
-                    fontSize: 13,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

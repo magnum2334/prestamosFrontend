@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:stikev/utils/widgets/custom_elevated_buttom.dart';
+import 'package:stikev/utils/widgets/custom_text_field.dart';
 
-class SingUpScreen extends StatefulWidget {
-  const SingUpScreen({super.key, required this.controller});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key, required this.controller});
   final PageController controller;
 
   @override
-  State<SingUpScreen> createState() => _SingUpScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SingUpScreenState extends State<SingUpScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
+  //final LoginController _loginController = Get.put(LoginController());
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -18,6 +22,8 @@ class _SingUpScreenState extends State<SingUpScreen> {
 
   @override
   void dispose() {
+    _emailController.dispose();
+    _passController.dispose();
     super.dispose();
   }
 
@@ -39,9 +45,7 @@ class _SingUpScreenState extends State<SingUpScreen> {
                     height: constraints.maxWidth * 1.07,
                   ),
                 ),
-                const SizedBox(
-                  height: 18,
-                ),
+                const SizedBox(height: 18),
                 Padding(
                   padding: EdgeInsets.symmetric(
                       horizontal: constraints.maxWidth * 0.12),
@@ -57,164 +61,31 @@ class _SingUpScreenState extends State<SingUpScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(
-                        height: 40,
+                      const SizedBox(height: 40),
+                      CustomTextField(
+                        controller: _emailController,
+                        labelText: 'Email',
                       ),
-                      SizedBox(
-                        height: 56,
-                        child: TextField(
-                          controller: _emailController,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFF393939),
-                            fontSize: 13,
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            labelStyle: TextStyle(
-                              color: Color(0xFF755DC1),
-                              fontSize: 15,
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w600,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10)),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: Color(0xFF837E93),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10)),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: Color(0xFF9F7BFF),
-                              ),
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: 17),
+                      CustomTextField(
+                        controller: _passController,
+                        labelText: 'Password',
+                        obscureText: true,
                       ),
-                      const SizedBox(
-                        height: 17,
+                      const SizedBox(height: 25),
+                      CustomElevatedButton(
+                        onPressed: () {
+                          widget.controller.animateToPage(
+                            2,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.ease,
+                          );
+                        },
+                        buttonText: 'Create account',
                       ),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: TextField(
-                          controller: _passController,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFF393939),
-                            fontSize: 13,
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w400,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            hintText: 'Create Password',
-                            hintStyle: TextStyle(
-                              color: Color(0xFF837E93),
-                              fontSize: 10,
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w400,
-                            ),
-                            labelStyle: TextStyle(
-                              color: Color(0xFF755DC1),
-                              fontSize: 15,
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w600,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10)),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: Color(0xFF837E93),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(10)),
-                              borderSide: BorderSide(
-                                width: 1,
-                                color: Color(0xFF9F7BFF),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 25,
-                      ),
-                      ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(10)),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              widget.controller.animateToPage(2,
-                                  duration: const Duration(milliseconds: 500),
-                                  curve: Curves.ease);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF9F7BFF),
-                            ),
-                            child: const Text(
-                              'Create account',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 15,
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            'Already have an account?',
-                            style: TextStyle(
-                              color: Color(0xFF837E93),
-                              fontSize: 13,
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 2.5,
-                          ),
-                          InkWell(
-                            onTap: () {
-                              widget.controller.animateToPage(0,
-                                  duration: const Duration(milliseconds: 500),
-                                  curve: Curves.ease);
-                            },
-                            child: const Text(
-                              'Log In ',
-                              style: TextStyle(
-                                color: Color(0xFF755DC1),
-                                fontSize: 13,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(
-                        height: 15,
-                      ),
+                      const SizedBox(height: 15),
+                      _buildSignInRow(),
+                      const SizedBox(height: 15),
                     ],
                   ),
                 ),
@@ -223,6 +94,41 @@ class _SingUpScreenState extends State<SingUpScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildSignInRow() {
+    return Row(
+      children: [
+        const Text(
+          'Already have an account?',
+          style: TextStyle(
+            color: Color(0xFF837E93),
+            fontSize: 13,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 2.5),
+        InkWell(
+          onTap: () {
+            widget.controller.animateToPage(
+              0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.ease,
+            );
+          },
+          child: const Text(
+            'Log In',
+            style: TextStyle(
+              color: Color(0xFF755DC1),
+              fontSize: 13,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
