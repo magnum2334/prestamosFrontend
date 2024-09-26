@@ -6,6 +6,7 @@ class AppConfig {
 
   // Construye las URLs completas para las APIs
   static String get healthApiUrl => '$apiServerIp/health';
+  static String get profileApiUrl => '$apiServerIp/auth/profile';
   static String get authApiUrl => '$apiServerIp/auth/login';
   static String get userApiUrl => '$apiServerIp/users';
   static String get clientApiUrl => '$apiServerIp/cliente';
@@ -13,4 +14,5 @@ class AppConfig {
   static String get loanApiUrl => '$apiServerIp/prestamo';
   static String get paymentApiUrl => '$apiServerIp/pago';
   static String get jopApiUrl => '$apiServerIp/jop';
+  static String rutaCobradorApiUrl(String cobradorId) => '$apiServerIp/ruta/cobrador/$cobradorId';
 }

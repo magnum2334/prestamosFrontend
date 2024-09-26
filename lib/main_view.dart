@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:stikev/screens/login_screen.dart';
-import 'package:stikev/screens/sing_up_screen.dart';
+import 'package:stikev/screens/dasboard/bottom_navbar.dart';
+import 'package:stikev/screens/login/login_screen.dart';
+import 'package:stikev/screens/login/sing_up_screen.dart';
 import 'package:stikev/screens/verify_screen.dart';
-
 class MainView extends StatefulWidget {
   const MainView({super.key});
 
@@ -18,7 +18,7 @@ class _MainViewState extends State<MainView> {
     return Scaffold(
       body: PageView.builder(
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: 3,
+        itemCount: 4,
         controller: controller,
         itemBuilder: (context, index) {
           if (index == 0) {
@@ -26,10 +26,10 @@ class _MainViewState extends State<MainView> {
               controller: controller,
             );
           } else if (index == 1) {
-            return SignUpScreen(
+            return BottomBar(
               controller: controller,
             );
-          } else {
+          }  else {
             return VerifyScreen(
               controller: controller,
             );

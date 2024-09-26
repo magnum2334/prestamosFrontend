@@ -1,9 +1,9 @@
-// Pantalla de inicio de sesión
-// ignore_for_file: use_build_context_synchronously
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stikev/getX/LoginController.dart';
+import 'package:stikev/getX/ProfileController.dart'; // Importa el controlador de perfil
+import 'package:stikev/getX/RouteController.dart';
 import 'package:stikev/utils/Alert_helper.dart';
 import 'package:stikev/utils/main_style.dart';
 import 'package:stikev/utils/route_config.dart';
@@ -21,22 +21,75 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final LoginController _loginController = Get.put(LoginController());
+  final ProfileController _profileController =
+      Get.put(ProfileController()); // Instancia del controlador de perfil
+  final RouteController _routeController = Get.put(RouteController());
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool isLoading = false; // Variable para manejar el estado de carga
+  Future<void> fetchRoutesByCobrador() async {
+    final cobradorId = 5; // Cambia esto al ID que necesitas
+    final url = AppConfig.rutaCobradorApiUrl(cobradorId.toString());
 
-  @override
-  void initState() {
-    super.initState();
-    _emailController.text = _loginController.email.value;
-    _passwordController.text = _loginController.password.value;
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization':
+            'Bearer ${_loginController.token}', // Añade el token Bearer
+      },
+    );
 
-    _emailController.addListener(() {
-      _loginController.setEmail(_emailController.text);
-    });
+    if (response.statusCode == 200) {
+      var data =
+          jsonDecode(response.body) as List; // Asegúrate de que es una lista
+      // Cargar las rutas en el controlador
+      List<Map<String, dynamic>> routes = data.map((item) {
+        // Asegúrate de manejar posibles campos null
+        return {
+          'id': item['id'] ?? '', // Proporciona un valor predeterminado
+          'nombre': item['nombre'] ?? '',
+          'cobradorId': item['cobradorId'] ?? 0,
+          'interes': item['interes'] ?? 0.0,
+          'tMaximoPrestamo': item['tMaximoPrestamo'] ?? 0.0,
+          'interesLibre': item['interesLibre'] ?? false,
+          'fecha_creacion': item['fecha_creacion'] ?? '',
+          'capitalId': item['capitalId'] ?? 0,
+        };
+      }).toList();
+      _routeController.loadRoutes(routes);
+    } else {
+      // Manejo del error
+      debugPrint("Error al obtener rutas: ${response.statusCode}");
+    }
+  }
 
-    _passwordController.addListener(() {
-      _loginController.setPassword(_passwordController.text);
-    });
+  Future<void> fetchUserProfile() async {
+    final url = AppConfig
+        .profileApiUrl; // Asegúrate de definir esta URL en tu configuración
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization':
+            'Bearer ${_loginController.token}', // Añade el token Bearer
+      },
+    );
+
+    if (response.statusCode == 200) {
+      var jsonResponse = jsonDecode(response.body);
+      // Establecer los datos del perfil en el ProfileController
+      _profileController.setProfileData(
+        jsonResponse['user']['id'],
+        jsonResponse['user']['email'],
+        jsonResponse['user']['nombre'],
+        jsonResponse['user']['telefono'],
+        jsonResponse['user']['rolId'],
+        jsonResponse['user']['estado'],
+      );
+      print("Perfil del usuario cargado: ${_profileController.email.value}");
+    } else {
+      // Manejo del error
+      debugPrint("Error al obtener perfil: ${response.statusCode}");
+    }
   }
 
   Future<void> _login() async {
@@ -51,30 +104,50 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    setState(() {
+      isLoading = true; // Inicia el estado de carga
+    });
+
     try {
-      var response = await http.post(
+      // Solicitud de login
+      final response = await http.post(
         Uri.parse(AppConfig.authApiUrl),
         body: {
           'email': email,
           'password': password,
         },
       );
-      // Imprimir el código de estado y cuerpo de la respuesta
-      // print('Status code: ${response.statusCode}');
-      // print('Response body: ${response.body}');
-      // print('authApiUrl: ${AppConfig.authApiUrl}');
+   
       if (response.statusCode == 201) {
-        // Acción en caso de éxito
-        // ignore: use_build_context_synchronously
-        AlertHelper.showSuccessAlert(context, 'Login successful');
+        var jsonResponse = jsonDecode(response.body);
+        String accessToken = jsonResponse['accessToken'];
+        _loginController.setToken(accessToken); // Guarda el token
+
+        // Ahora que tienes el token, realiza las peticiones para las rutas y el perfil
+        await fetchRoutesByCobrador();
+        await fetchUserProfile();
+ 
+        // Navegar a la siguiente página
+        widget.controller.animateToPage(
+          1,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.slowMiddle,
+        );
       } else {
+        
+      
         // Acción en caso de fallo
         AlertHelper.showErrorAlert(context, 'Login failed. Please try again.');
       }
     } catch (e) {
+      print("error login " + e.toString());
       // En caso de error en la solicitud
       AlertHelper.showErrorAlert(
           context, 'Error occurred. Please try again later.');
+    } finally {
+      setState(() {
+        isLoading = false; // Finaliza el estado de carga
+      });
     }
   }
 
@@ -113,9 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         _loginController.setEmail(value);
                       },
                     ),
-                    SizedBox(
-                      height: screenHeight * 0.02,
-                    ),
+                    SizedBox(height: screenHeight * 0.02),
                     CustomTextField(
                       controller: _passwordController,
                       labelText: 'Password',
@@ -124,16 +195,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         _loginController.setPassword(value);
                       },
                     ),
-                    SizedBox(
-                      height: screenHeight * 0.03,
-                    ),
-                    CustomElevatedButton(
-                      onPressed: _login,
-                      buttonText: 'Sign In',
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.02,
-                    ),
+                    SizedBox(height: screenHeight * 0.03),
+                    // Mostrar el botón o el spinner
+                    isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : CustomElevatedButton(
+                            onPressed: _login,
+                            buttonText: 'Sign In',
+                          ),
+                    SizedBox(height: screenHeight * 0.02),
                     Row(
                       children: [
                         Text(
@@ -145,9 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        SizedBox(
-                          width: screenWidth * 0.02,
-                        ),
+                        SizedBox(width: screenWidth * 0.02),
                         InkWell(
                           onTap: () {
                             widget.controller.animateToPage(1,
@@ -166,9 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(
-                      height: screenHeight * 0.01,
-                    ),
+                    SizedBox(height: screenHeight * 0.01),
                     Text(
                       'Forget Password?',
                       style: TextStyle(
