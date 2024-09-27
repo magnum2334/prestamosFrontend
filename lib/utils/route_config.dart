@@ -9,7 +9,7 @@ class AppConfig {
   static String get profileApiUrl => '$apiServerIp/auth/profile';
   static String get authApiUrl => '$apiServerIp/auth/login';
   static String get userApiUrl => '$apiServerIp/users';
-  static String get clientApiUrl => '$apiServerIp/cliente';
+  static String get clientApiUrl => '$apiServerIp/cliente/create';
   static String get routeApiUrl => '$apiServerIp/ruta';
   static String get loanApiUrl => '$apiServerIp/prestamo';
   static String get paymentApiUrl => '$apiServerIp/pago';

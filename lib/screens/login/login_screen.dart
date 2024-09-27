@@ -27,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool isLoading = false; // Variable para manejar el estado de carga
+
   Future<void> fetchRoutesByCobrador() async {
     final cobradorId = 5; // Cambia esto al ID que necesitas
     final url = AppConfig.rutaCobradorApiUrl(cobradorId.toString());
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'id': item['id'] ?? '', // Proporciona un valor predeterminado
           'nombre': item['nombre'] ?? '',
           'cobradorId': item['cobradorId'] ?? 0,
-          'interes': item['interes'] ?? 0.0,
+          'interes': item['interes'] ?? 0,
           'tMaximoPrestamo': item['tMaximoPrestamo'] ?? 0.0,
           'interesLibre': item['interesLibre'] ?? false,
           'fecha_creacion': item['fecha_creacion'] ?? '',
@@ -108,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
       isLoading = true; // Inicia el estado de carga
     });
 
-    try {
+   try { 
       // Solicitud de login
       final response = await http.post(
         Uri.parse(AppConfig.authApiUrl),
@@ -117,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'password': password,
         },
       );
-   
+
       if (response.statusCode == 201) {
         var jsonResponse = jsonDecode(response.body);
         String accessToken = jsonResponse['accessToken'];
@@ -126,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Ahora que tienes el token, realiza las peticiones para las rutas y el perfil
         await fetchRoutesByCobrador();
         await fetchUserProfile();
- 
+
         // Navegar a la siguiente página
         widget.controller.animateToPage(
           1,
@@ -134,8 +135,6 @@ class _LoginScreenState extends State<LoginScreen> {
           curve: Curves.slowMiddle,
         );
       } else {
-        
-      
         // Acción en caso de fallo
         AlertHelper.showErrorAlert(context, 'Login failed. Please try again.');
       }
@@ -182,6 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     CustomTextField(
                       controller: _emailController,
                       labelText: 'Email',
+                      prefixIcon: Icon(Icons.email),
                       onChanged: (value) {
                         _loginController.setEmail(value);
                       },
@@ -191,9 +191,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       labelText: 'Password',
                       obscureText: true,
+                      keyboardType: TextInputType.visiblePassword,
+                      prefixIcon: Icon(Icons.password_sharp),
+                      height: 70,
                       onChanged: (value) {
                         _loginController.setPassword(value);
-                      },
+                      }, // Aumentar altura
                     ),
                     SizedBox(height: screenHeight * 0.03),
                     // Mostrar el botón o el spinner

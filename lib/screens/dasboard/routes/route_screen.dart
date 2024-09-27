@@ -2,36 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/getX/RouteController.dart';
+import 'package:stikev/screens/dasboard/routes/clients/clients_screen.dart';
 import 'package:stikev/utils/main_style.dart';
 
 class RoutesWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final RouteController routeController = Get.find();
-    
+
     // Obtener las rutas a través del controlador de rutas
     List<RouteModel> currentRoutes = routeController.getRoutes();
 
     // Mostrar el contenido de la pestaña de rutas con un ListView
     return Scaffold(
       appBar: AppBar(
-        title:const Text(
+        title: const Text(
           'Rutas Disponibles',
           style: TextStyle(color: Colors.white), // Color blanco para el texto
         ),
-        backgroundColor: AppStyles.thirdColor, // Color de fondo definido en AppStyles
-        iconTheme:const IconThemeData(color: Colors.white), // Color blanco para los iconos (si hay)
+        backgroundColor:
+            AppStyles.thirdColor, // Color de fondo definido en AppStyles
+        iconTheme: const IconThemeData(
+            color: Colors.white), // Color blanco para los iconos (si hay)
       ),
       body: Padding(
-        padding: const EdgeInsets.only(top: 16.0), // Espacio superior para bajar la lista
+        padding: const EdgeInsets.only(
+            top: 16.0), // Espacio superior para bajar la lista
         child: ListView.builder(
           padding: const EdgeInsets.all(8.0),
           itemCount: currentRoutes.length,
           itemBuilder: (context, index) {
             final route = currentRoutes[index];
-            
+
             return Card(
-              margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+              color: Colors.white,
+              margin:
+                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
               elevation: 5.0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.0),
@@ -54,7 +60,18 @@ class RoutesWidget extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 onTap: () {
-                  
+                  Get.to(
+                    () => ClientesScreen(
+                      routeId: route.id, // Pasar el id de la ruta
+                      routeName: route.name,
+                      interes: route.interes// Pasar el nombre de la ruta
+                    ),
+                    transition: Transition
+                        .rightToLeft, // Tipo de transición (deslizamiento de derecha a izquierda)
+                    duration: const Duration(
+                        milliseconds: 500), // Duración de la animación
+                  );
+                  // Navegar a la página de clientes con el id de la ruta
                 },
               ),
             );

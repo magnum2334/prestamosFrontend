@@ -23,7 +23,7 @@ class RouteModel {
   final int id;                      // ID de la ruta
   final String name;                 // Nombre de la ruta
   final int cobradorId;              // ID del cobrador
-  final double interes;              // Interés
+  final int interes;              // Interés
   final double tMaximoPrestamo;      // Monto máximo del préstamo
   final bool interesLibre;           // Si es libre de interés
   final DateTime fechaCreacion;      // Fecha de creación
@@ -46,7 +46,7 @@ class RouteModel {
       id: json['id'],
       name: json['nombre'], // Cambia 'nombre' a 'name'
       cobradorId: json['cobradorId'],
-      interes: json['interes'].toDouble(), // Asegura que sea un double
+      interes: json['interes'].toInt(), // Asegura que sea un double
       tMaximoPrestamo: json['tMaximoPrestamo'].toDouble(), // Asegura que sea un double
       interesLibre: json['interesLibre'], // Se asume que es un bool
       fechaCreacion: DateTime.parse(json['fecha_creacion']), // Convierte a DateTime
