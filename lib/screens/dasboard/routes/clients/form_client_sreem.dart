@@ -1,9 +1,12 @@
+// ignore_for_file: unrelated_type_equality_checks
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:intl/intl.dart'; // Import intl for DateFormat and NumberFormat
+import 'package:stikev/getX/ClienteCrontroller.dart';
 import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/utils/Alert_helper.dart';
@@ -32,7 +35,8 @@ class _ClienteFormState extends State<ClienteForm> {
       TextEditingController();
   final TextEditingController telefonoController = TextEditingController();
   final TextEditingController direccionController = TextEditingController();
-  final LoginController _loginController = Get.put(LoginController());
+  final LoginController loginController = Get.put(LoginController());
+  final ClientesController clientesController = Get.put(ClientesController());
   final List<int> cuotasOptions = [1, 2, 3, 4, 5];
   int selectedCuotas = 1;
   double totalAPagar = 0.0;
@@ -42,7 +46,7 @@ class _ClienteFormState extends State<ClienteForm> {
 
   // Listado de frecuencias de pago
   final List<String> frecuenciaOptions = ['Mensual', 'Quincenal', 'Semanal'];
-  String? selectedFrecuencia;
+  String? selectedFrecuencia ;
 
   @override
   void initState() {
@@ -94,7 +98,6 @@ class _ClienteFormState extends State<ClienteForm> {
       'cobradorId': profileController.userId.value,
       'frecuencia': selectedFrecuencia,
       'interes': interes,
-      
     };
 
     // Combina los datos en un solo mapa con las llaves cliente y prestamo
@@ -113,20 +116,18 @@ class _ClienteFormState extends State<ClienteForm> {
         Uri.parse(AppConfig.clientApiUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${_loginController.token}',
+          'Authorization': 'Bearer ${loginController.token}',
         },
         body: jsonData,
       );
 
       if (response.statusCode == 201) {
         // Si la respuesta es exitosa, manejar la respuesta aquí
-        AlertHelper.showConfirmAlert(
-          context,
-          "¿Estás seguro?",
-          confirmBtnText: "Sí",
-          cancelBtnText: "No",
-          confirmBtnColor: Colors.green,
+        clientesController.fetchPrestamos(
+          AppConfig.rutaPrestamoApiUrl(widget.routeId.toString()),
+          loginController.token.value,
         );
+        Get.back();
       } else {
         // Manejar errores de la respuesta
         print('Error al enviar los datos: ${response.statusCode}');
@@ -149,7 +150,9 @@ class _ClienteFormState extends State<ClienteForm> {
   // Función para calcular las fechas de las cuotas según la frecuencia
   List<DateTime> _calcularFechasCuotas(DateTime startDate) {
     List<DateTime> fechasCuotas = [];
-    for (int i = 0; i < selectedCuotas; i++) {
+
+    // Se incrementa en 1 el número de cuotas a procesar
+    for (int i = 0; i < selectedCuotas + 1; i++) {
       switch (selectedFrecuencia) {
         case 'Mensual':
           fechasCuotas.add(
@@ -163,6 +166,12 @@ class _ClienteFormState extends State<ClienteForm> {
           break;
       }
     }
+
+    // Siempre eliminar la primera fecha
+    if (fechasCuotas.isNotEmpty) {
+      fechasCuotas.removeAt(0);
+    }
+
     return fechasCuotas;
   }
 
@@ -301,7 +310,10 @@ class _ClienteFormState extends State<ClienteForm> {
               ),
               const SizedBox(height: 10),
 
-              if (selectedCuotas > 0 && selectedFrecuencia != null)
+              if (selectedCuotas > 0 &&
+                  selectedFrecuencia != null &&
+                  valorPrestadoController.value != '' &&
+                  interesController.value != '')
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey),
@@ -310,7 +322,7 @@ class _ClienteFormState extends State<ClienteForm> {
                   width: MediaQuery.of(context).size.width * 0.9,
                   child: DataTable(
                     headingRowColor:
-                        MaterialStateProperty.all(AppStyles.thirdColor),
+                        WidgetStateProperty.all(AppStyles.thirdColor),
                     columns: const [
                       DataColumn(
                         label: Text('Cuota',
@@ -336,8 +348,25 @@ class _ClienteFormState extends State<ClienteForm> {
                     ],
                     rows: List<DataRow>.generate(selectedCuotas, (index) {
                       double montoCuota = totalAPagar / selectedCuotas;
-                      List<DateTime> fechas =
-                          _calcularFechasCuotas(DateTime.now());
+                      DateTime startDate = DateTime.now();
+                      List<DateTime> fechasCuotas = [];
+                      switch (selectedFrecuencia) {
+                        case 'Mensual':
+                          startDate.add(Duration(
+                              days: DateTime(
+                                      startDate.year, startDate.month + 1, 0)
+                                  .day // Obtiene el último día del mes
+                              ));
+                          break;
+                        case 'Quincenal':
+                          startDate.add(Duration(days: 15));
+                          break;
+                        case 'Semanal':
+                          startDate.add(Duration(days: 7));
+                          break;
+                      }
+                      List<DateTime> fechas = _calcularFechasCuotas(startDate);
+
                       return DataRow(
                         cells: [
                           DataCell(Text('N  ${index + 1}',

@@ -15,4 +15,6 @@ class AppConfig {
   static String get paymentApiUrl => '$apiServerIp/pago';
   static String get jopApiUrl => '$apiServerIp/jop';
   static String rutaCobradorApiUrl(String cobradorId) => '$apiServerIp/ruta/cobrador/$cobradorId';
+  static String rutaPrestamoApiUrl(String rutaId) => '$apiServerIp/cliente/prestamos/ruta/$rutaId';
+  static String rutaPrestamoPagoApiUrl(String prestamoId) => '$apiServerIp/cliente/prestamo/$prestamoId';
 }

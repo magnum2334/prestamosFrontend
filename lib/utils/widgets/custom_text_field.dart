@@ -6,6 +6,7 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;
   final bool obscureText;
+  final bool borderNone;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
@@ -24,6 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.onChanged,
     this.prefixIcon,
     this.suffixIcon,
+    this.borderNone = false,
     this.height = 60, // Valor predeterminado para la altura
     this.inputFormatters, // Añadir inputFormatters como parámetro
   }) : super(key: key);
@@ -62,14 +64,18 @@ class CustomTextField extends StatelessWidget {
           prefixIcon: prefixIcon,
           suffixIcon: suffixIcon,
           contentPadding: const EdgeInsets.symmetric(vertical: 15), // Ajustar padding interno
-          enabledBorder: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
-            borderSide: BorderSide(
-              width: 1,
-              color: AppStyles.thirdColor,
-            ),
-          ),
-          focusedBorder: const OutlineInputBorder(
+          enabledBorder: borderNone == true
+              ? null // No mostrar borde si borderNone es true
+              : const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  borderSide: BorderSide(
+                    width: 1,
+                    color: AppStyles.thirdColor,
+                  ),
+                ),
+          focusedBorder:  borderNone == true
+              ? null // No mostrar borde si borderNone es true
+              :  const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(10)),
             borderSide: BorderSide(
               width: 1,

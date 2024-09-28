@@ -60,15 +60,12 @@ class AlertHelper {
 
   static void showConfirmAlert(BuildContext context, String text,
       {required String confirmBtnText,
-      required String cancelBtnText,
       required Color confirmBtnColor}) {
     showQuickAlert(
       context: context,
       type: QuickAlertType.confirm,
       text: text,
       confirmBtnText: confirmBtnText,
-      cancelBtnText: cancelBtnText,
-      confirmBtnColor: confirmBtnColor,
     );
   }
 
