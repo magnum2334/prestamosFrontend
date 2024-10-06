@@ -19,7 +19,6 @@ class ClientesController extends GetxController {
         var data = jsonDecode(response.body) as List<dynamic>;
         prestamos.value = [];
         prestamos.value = data;
-        print('data $data');
       } else {
         debugPrint("Error al obtener préstamos: ${response.statusCode}");
       }

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:stikev/getX/ClienteCrontroller.dart';
 import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/utils/alert_helper.dart';
+import 'package:stikev/utils/animated_icon.dart';
 import 'package:stikev/utils/main_style.dart';
 import 'package:stikev/utils/route_config.dart';
 import 'package:stikev/utils/widgets/custom_text_field.dart';
@@ -14,7 +15,7 @@ import 'package:http/http.dart' as http;
 
 class PayModal {
   static void showCuotasPayBottomSheet(
-      BuildContext context, List<dynamic> pagos, valorPrestamo, rutaId, prestamoId) {
+      BuildContext context, restante, prestamo) {
     final NumberFormat currencyFormatter =
         NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
 
@@ -50,49 +51,114 @@ class PayModal {
               const SizedBox(height: 8),
               Expanded(
                 child: ListView.builder(
-                  itemCount: pagos.length,
+                  itemCount: prestamo['pagos'].length,
                   itemBuilder: (context, index) {
-                    var pago = pagos[index];
+                    var pago = prestamo['pagos'][index];
+                    Icon icon;
+                    if (prestamo['estado'].trim() == 'Mora') {
+                      icon = const Icon(
+                        Icons.access_alarms, // Icono de puntos
+                        color: Color.fromARGB(
+                            255, 244, 184, 54), // Color que depende del estado
+                      );
+                    } else {
+                      icon = const Icon(
+                        Icons.star_outline_outlined, // Icono de puntos
+                        color: Colors.green, // Color que depende del estado
+                      );
+                    }
+                    Widget iconStatus = (prestamo['estado'].trim() == 'Mora')
+                        ? AnimatedIconWidget()
+                        : const Icon(Icons.star, color: Colors.green);
+                    ;
                     return GestureDetector(
                       onTap: () {
-                        _showPaymentOptionModal(context, pagos, pago,
-                            currencyFormatter, valorPrestamo, rutaId, prestamoId);
+                        _showPaymentOptionModal(
+                          context,
+                          prestamo['pagos'],
+                          pago,
+                          currencyFormatter,
+                          restante,
+                          prestamo['rutaId'],
+                          prestamo['id'],
+                        );
                       },
                       child: Card(
                         color: Colors.white,
                         elevation: 2,
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        margin: const EdgeInsets.symmetric(vertical: 18.0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Cuota N ${pago['numeroCuota']}',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppStyles.thirdColor,
-                                ),
+                        child: Stack(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cuota N ${pago['numeroCuota']}',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppStyles.thirdColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildCuotaInfoRow(
+                                    'Monto:',
+                                    '\$ ${currencyFormatter.format(pago['monto']).replaceAll('\$', '')}',
+                                    Colors.green,
+                                  ),
+                                  _buildCuotaInfoRow(
+                                    'Abono:',
+                                     '\$ ${currencyFormatter.format(pago['abono']).replaceAll('\$', '')}',
+                                    Colors.green,
+                                  ),
+                                  _buildCuotaInfoRow(
+                                    'Fecha:',
+                                    pago['fecha'],
+                                    AppStyles.thirdColor,
+                                  ),
+                                  _buildCuotaInfoRow(
+                                    'Días de Mora:',
+                                    '${pago['diasMora']}',
+                                    AppStyles.thirdColor,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              _buildCuotaInfoRow(
-                                  'Monto:',
-                                  currencyFormatter.format(pago['monto']),
-                                  Colors.green),
-                              _buildCuotaInfoRow(
-                                  'Abono:',
-                                  currencyFormatter.format(pago['abono']),
-                                  Colors.green),
-                              _buildCuotaInfoRow('Fecha:', pago['fecha'],
-                                  AppStyles.thirdColor),
-                              _buildCuotaInfoRow('Días de Mora:',
-                                  '${pago['diasMora']}', AppStyles.thirdColor),
-                            ],
-                          ),
+                            ),
+                            // Posicionamos el ícono en la esquina superior derecha y cambiamos su color según el estado
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize
+                                        .min, // Evita que el Row ocupe más espacio del necesario
+                                    children: [
+                                      Text(
+
+                                        prestamo['estado'].trim(),
+                                        style: const TextStyle(
+                                          color: Color.fromARGB(255, 0, 0, 0), // Cambia el color según sea necesario
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 19
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                          width:
+                                              4), // Espacio entre el texto y el ícono
+                                      iconStatus, // Reemplaza esto con tu ícono correspondiente
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -132,10 +198,22 @@ class PayModal {
 
   // Método para mostrar las opciones de pago
   static void _showPaymentOptionModal(BuildContext context, pagos, dynamic pago,
-      NumberFormat currencyFormatter, String valorPrestamo, rutaId, prestamoId) {
-    TextEditingController amountController = TextEditingController(
-        text: currencyFormatter.format(pago['monto']).replaceAll('\$', ''));
+      NumberFormat currencyFormatter, String restante, rutaId, prestamoId) {
     ValueNotifier<bool> isTotalPayment = ValueNotifier<bool>(true);
+
+    final montoData = pago['monto'].toInt();
+    final restanteData =
+        int.parse(restante.replaceAll('\$', '').replaceAll('.', ''));
+
+// Inicializa el TextEditingController con el valor adecuado
+    TextEditingController amountController = TextEditingController(
+        text: (restanteData < montoData)
+            ? restante.replaceAll(
+                '\$', '') // Si restante es menor que montoData, usar restante
+            : currencyFormatter
+                .format(montoData)
+                .replaceAll('\$', '') // De lo contrario, usar montoData
+        );
 
     showModalBottomSheet(
       context: context,
@@ -163,36 +241,44 @@ class PayModal {
               ValueListenableBuilder<bool>(
                 valueListenable: isTotalPayment,
                 builder: (context, value, child) {
+                  final montoData = pago['monto'].toInt();
+                  final restanteData = int.parse(
+                      restante.replaceAll('\$', '').replaceAll('.', ''));
+
+                  print(montoData > restanteData);
+
                   return Column(
                     children: [
-                      ListTile(
-                        title: const Text('Pago Total',
-                            style: TextStyle(color: Colors.white)),
-                        leading: Radio<bool>(
-                          value: true,
-                          groupValue: value,
-                          onChanged: (newValue) {
-                            isTotalPayment.value = true;
-                            amountController.text = currencyFormatter
-                                .format(pago['monto'])
-                                .replaceAll('\$', '');
-                          },
+                      if (restanteData < montoData) ...[
+                        ListTile(
+                          title: const Text('Pago total',
+                              style: TextStyle(color: Colors.white)),
+                          leading: Radio<bool>(
+                            value: false,
+                            groupValue: value,
+                            onChanged: (newValue) {
+                              isTotalPayment.value = false;
+                              amountController.text =
+                                  restante.replaceAll('\$', '');
+                            },
+                          ),
                         ),
-                      ),
-                      ListTile(
-                        title: const Text('Abono',
-                            style: TextStyle(color: Colors.white)),
-                        leading: Radio<bool>(
-                          value: false,
-                          groupValue: value,
-                          onChanged: (newValue) {
-                            isTotalPayment.value = false;
-                            amountController.text = currencyFormatter
-                                .format(pago['abono'])
-                                .replaceAll('\$', '');
-                          },
+                      ] else ...[
+                        ListTile(
+                          title: const Text('Pagar cuota',
+                              style: TextStyle(color: Colors.white)),
+                          leading: Radio<bool>(
+                            value: false,
+                            groupValue: value,
+                            onChanged: (newValue) {
+                              isTotalPayment.value = false;
+                              amountController.text = currencyFormatter
+                                  .format(pago['monto'])
+                                  .replaceAll('\$', '');
+                            },
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   );
                 },
@@ -217,8 +303,8 @@ class PayModal {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => _processPayment(
-                    context, amountController, valorPrestamo, pagos, rutaId, prestamoId),
+                onPressed: () => _processPayment(context, amountController,
+                    restante, pagos, rutaId, prestamoId),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   padding:
@@ -243,31 +329,28 @@ class PayModal {
   static Future<void> _processPayment(
       BuildContext context,
       TextEditingController amountController,
-      String valorPrestamo,
-      List<dynamic> pagos, rutaId, prestamoId) async {
+      String restante,
+      List<dynamic> pagos,
+      rutaId,
+      prestamoId) async {
     final valorPrestamoInt =
-        int.tryParse(valorPrestamo.replaceAll('\$', '').replaceAll('.', ''));
+        int.tryParse(restante.replaceAll('\$', '').replaceAll('.', ''));
     final amount = int.tryParse(
         amountController.text.replaceAll('\$', '').replaceAll('.', ''));
 
-    // Verifica el total abonado
-    int totalAbono = 0;
-    for (var pago in pagos) {
-      totalAbono += pago['abono'] as int;
-    }
-
     // Validar si las conversiones son exitosas antes de proceder
     if (valorPrestamoInt != null && amount != null) {
-      final result = valorPrestamoInt - totalAbono >= amount;
+      final result = valorPrestamoInt >= amount;
 
       if (result) {
         // Realiza la petición a la API para procesar el pago
         try {
-          final response = await _makePaymentApiCall(amount, rutaId, prestamoId);
+          final response =
+              await _makePaymentApiCall(amount, rutaId, prestamoId);
           print('response $response');
           if (response) {
             // Mostrar alerta de éxito
-             Get.back(); // Cierra la hoja modal
+            Get.back(); // Cierra la hoja modal
             Get.back(); // Cierra la hoja anterior
             AlertHelper.showSuccessAlert(context, "Pago exitoso.");
           } else {
@@ -292,9 +375,9 @@ class PayModal {
   // Simulación de llamada a la API para realizar el pago
   static _makePaymentApiCall(data, rutaId, prestamoId) async {
     // Convertir el mapa a JSON
-     var body = {
-        'abono':data.toString(),
-      };
+    var body = {
+      'abono': data.toString(),
+    };
     final String jsonData = jsonEncode(body);
     final LoginController loginController = Get.put(LoginController());
     final ClientesController clientesController = Get.put(ClientesController());
@@ -307,8 +390,10 @@ class PayModal {
         },
         body: jsonData,
       );
+      print(jsonData);
+      print(AppConfig.rutaPrestamoPagoApiUrl(prestamoId.toString()));
       if (response.statusCode == 201) {
-         clientesController.fetchPrestamos(
+        clientesController.fetchPrestamos(
           AppConfig.rutaPrestamoApiUrl(rutaId.toString()),
           loginController.token.value,
         );
@@ -326,8 +411,8 @@ class PayModal {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.black)),
-        Text(value, style: TextStyle(color: color)),
+        Text(label, style: const TextStyle(color: Colors.black,  fontWeight: FontWeight.bold,)),
+        Text(value, style: TextStyle(color: color,  fontWeight: FontWeight.bold,)),
       ],
     );
   }

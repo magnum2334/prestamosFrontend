@@ -29,7 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false; // Variable para manejar el estado de carga
 
   Future<void> fetchRoutesByCobrador() async {
-    final cobradorId = 5; // Cambia esto al ID que necesitas
+    final cobradorId =
+        _profileController.userId.value; // Cambia esto al ID que necesitas
     final url = AppConfig.rutaCobradorApiUrl(cobradorId.toString());
 
     final response = await http.get(
@@ -109,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
       isLoading = true; // Inicia el estado de carga
     });
 
-   try { 
+    try {
       // Solicitud de login
       final response = await http.post(
         Uri.parse(AppConfig.authApiUrl),
@@ -118,15 +119,15 @@ class _LoginScreenState extends State<LoginScreen> {
           'password': password,
         },
       );
-
+      print('response.statusCode ${response.statusCode}');
       if (response.statusCode == 201) {
         var jsonResponse = jsonDecode(response.body);
         String accessToken = jsonResponse['accessToken'];
         _loginController.setToken(accessToken); // Guarda el token
 
         // Ahora que tienes el token, realiza las peticiones para las rutas y el perfil
-        await fetchRoutesByCobrador();
         await fetchUserProfile();
+        await fetchRoutesByCobrador();
 
         // Navegar a la siguiente página
         widget.controller.animateToPage(

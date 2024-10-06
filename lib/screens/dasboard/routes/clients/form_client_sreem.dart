@@ -91,7 +91,7 @@ class _ClienteFormState extends State<ClienteForm> {
           int.parse(valorPrestadoController.text.replaceAll('.', '')),
       'codigo': 'codigo',
       'valorTotal': (interesTotal + valorPrestado).toInt(),
-      'saldo': (interesTotal + valorPrestado).toInt(),
+      'saldo': 0,
       'cuotas': selectedCuotas,
       'rutaId': widget.routeId,
       'estadoId': 1,

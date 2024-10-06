@@ -6,6 +6,7 @@ import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/getX/RouteController.dart';
 import 'package:stikev/screens/dasboard/profile/profile_screen.dart';
 import 'package:stikev/screens/dasboard/routes/route_screen.dart';
+import 'package:stikev/screens/dasboard/statistics/statistics_screen.dart';
 import 'package:stikev/utils/main_style.dart';
 
 class BottomBar extends StatefulWidget {
@@ -21,7 +22,7 @@ class _BottomBarState extends State<BottomBar> {
 
   final LoginController _loginController = Get.put(LoginController());
   final ProfileController _profileController = Get.put(ProfileController());
-
+  
   @override
   void initState() {
     super.initState();
@@ -51,7 +52,7 @@ class _BottomBarState extends State<BottomBar> {
   Widget _getSelectedWidget() {
     switch (_selectedIndex) {
       case 0:
-        return StatisticsWidget(); // Pestaña de estadísticas
+        return StatisticsScreen(); // Pestaña de estadísticas
       case 1:
         return RoutesWidget(); // Pestaña de rutas
       case 2:
@@ -62,13 +63,6 @@ class _BottomBarState extends State<BottomBar> {
   }
 }
 
-class StatisticsWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-        child: Text("Estadísticas")); // Contenido de la pestaña de estadísticas
-  }
-}
 
 final _navBarItems = [
   SalomonBottomBarItem(
