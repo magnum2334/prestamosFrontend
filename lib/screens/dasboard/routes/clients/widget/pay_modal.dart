@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:stikev/getX/ClienteCrontroller.dart';
 import 'package:stikev/getX/LoginController.dart';
+import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/utils/alert_helper.dart';
 import 'package:stikev/utils/animated_icon.dart';
 import 'package:stikev/utils/main_style.dart';
@@ -18,6 +19,36 @@ class PayModal {
       BuildContext context, restante, prestamo) {
     final NumberFormat currencyFormatter =
         NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
+    Map<String, Widget> getIconAndTextStatus(
+        Map<String, dynamic> prestamo, Map<String, dynamic> pago) {
+      final Widget icon;
+      final String text;
+
+      // Lógica para determinar el ícono y texto a mostrar basado en el pago
+      if (pago['monto'] == pago['abono']) {
+        icon = const Icon(Icons.check, color: Colors.green);
+        text = 'Pagado'; // Texto correspondiente
+      } else if (pago['diasMora'] > 0) {
+        icon = AnimatedIconWidget(); // Cambia según tu implementación
+        text = 'Mora'; // Texto correspondiente
+      } else {
+        icon =
+            const Icon(Icons.remove_circle_outline_sharp, color: Colors.black);
+        text = 'Faltante'; // Texto correspondiente
+      }
+      // Devuelve un Map con el ícono y el texto
+      return {
+        'icon': icon,
+        'text': Text(
+          text,
+          style: const TextStyle(
+              color: Color.fromARGB(
+                  255, 0, 0, 0), // Cambia el color según sea necesario
+              fontWeight: FontWeight.bold,
+              fontSize: 19),
+        ),
+      };
+    }
 
     showModalBottomSheet(
       context: context,
@@ -54,23 +85,11 @@ class PayModal {
                   itemCount: prestamo['pagos'].length,
                   itemBuilder: (context, index) {
                     var pago = prestamo['pagos'][index];
-                    Icon icon;
-                    if (prestamo['estado'].trim() == 'Mora') {
-                      icon = const Icon(
-                        Icons.access_alarms, // Icono de puntos
-                        color: Color.fromARGB(
-                            255, 244, 184, 54), // Color que depende del estado
-                      );
-                    } else {
-                      icon = const Icon(
-                        Icons.star_outline_outlined, // Icono de puntos
-                        color: Colors.green, // Color que depende del estado
-                      );
-                    }
-                    Widget iconStatus = (prestamo['estado'].trim() == 'Mora')
-                        ? AnimatedIconWidget()
-                        : const Icon(Icons.star, color: Colors.green);
-                    ;
+
+                    var statusWidgets = getIconAndTextStatus(prestamo, pago);
+                    Widget iconStatus = statusWidgets['icon']!;
+                    Widget textStatus = statusWidgets['text']!;
+
                     return GestureDetector(
                       onTap: () {
                         _showPaymentOptionModal(
@@ -98,7 +117,7 @@ class PayModal {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Cuota N ${pago['numeroCuota']}',
+                                    'N° ${pago['numeroCuota']} - ${pago['fecha'].replaceAll('-', '/')}',
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -113,19 +132,15 @@ class PayModal {
                                   ),
                                   _buildCuotaInfoRow(
                                     'Abono:',
-                                     '\$ ${currencyFormatter.format(pago['abono']).replaceAll('\$', '')}',
+                                    '\$ ${currencyFormatter.format(pago['abono']).replaceAll('\$', '')}',
                                     Colors.green,
                                   ),
-                                  _buildCuotaInfoRow(
-                                    'Fecha:',
-                                    pago['fecha'],
-                                    AppStyles.thirdColor,
-                                  ),
-                                  _buildCuotaInfoRow(
-                                    'Días de Mora:',
-                                    '${pago['diasMora']}',
-                                    AppStyles.thirdColor,
-                                  ),
+                                  if (pago['diasMora'] > 0)
+                                    _buildCuotaInfoRow(
+                                      'Días de Mora:',
+                                      '${pago['diasMora']}',
+                                      AppStyles.thirdColor,
+                                    ),
                                 ],
                               ),
                             ),
@@ -140,15 +155,7 @@ class PayModal {
                                     mainAxisSize: MainAxisSize
                                         .min, // Evita que el Row ocupe más espacio del necesario
                                     children: [
-                                      Text(
-
-                                        prestamo['estado'].trim(),
-                                        style: const TextStyle(
-                                          color: Color.fromARGB(255, 0, 0, 0), // Cambia el color según sea necesario
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 19
-                                        ),
-                                      ),
+                                      textStatus,
                                       const SizedBox(
                                           width:
                                               4), // Espacio entre el texto y el ícono
@@ -360,7 +367,7 @@ class PayModal {
         } catch (e) {
           // Manejo del error de la petición
           AlertHelper.showErrorAlert(
-              context, "Error al procesar el pago. Intenta nuevamente.");
+              context, "Error al procesar el pago. Intenta nuevamente. ${e.toString()}");
         }
       } else {
         // Manejo del caso donde result es false
@@ -375,12 +382,17 @@ class PayModal {
   // Simulación de llamada a la API para realizar el pago
   static _makePaymentApiCall(data, rutaId, prestamoId) async {
     // Convertir el mapa a JSON
-    var body = {
-      'abono': data.toString(),
-    };
-    final String jsonData = jsonEncode(body);
     final LoginController loginController = Get.put(LoginController());
     final ClientesController clientesController = Get.put(ClientesController());
+    // ignore: non_constant_identifier_names
+    final ProfileController profileController = Get.put(ProfileController());
+
+    var body = {
+      'abono': data.toString(),
+      'usuarioId': profileController.userId.toString()
+    };
+    final String jsonData = jsonEncode(body);
+    
     try {
       final response = await http.post(
         Uri.parse(AppConfig.rutaPrestamoPagoApiUrl(prestamoId.toString())),
@@ -390,8 +402,8 @@ class PayModal {
         },
         body: jsonData,
       );
-      print(jsonData);
-      print(AppConfig.rutaPrestamoPagoApiUrl(prestamoId.toString()));
+      debugPrint('$response');
+      debugPrint(AppConfig.rutaPrestamoPagoApiUrl(prestamoId.toString()));
       if (response.statusCode == 201) {
         clientesController.fetchPrestamos(
           AppConfig.rutaPrestamoApiUrl(rutaId.toString()),
@@ -403,6 +415,7 @@ class PayModal {
         return false;
       }
     } catch (e) {
+       debugPrint(e.toString());
       return false;
     }
   }
@@ -411,8 +424,16 @@ class PayModal {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.black,  fontWeight: FontWeight.bold,)),
-        Text(value, style: TextStyle(color: color,  fontWeight: FontWeight.bold,)),
+        Text(label,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            )),
+        Text(value,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+            )),
       ],
     );
   }

@@ -4,12 +4,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+// ignore: depend_on_referenced_packages
 import 'package:intl/intl.dart'; // Import intl for DateFormat and NumberFormat
 import 'package:stikev/getX/ClienteCrontroller.dart';
 import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/getX/ProfileController.dart';
-import 'package:stikev/utils/Alert_helper.dart';
 import 'package:stikev/utils/main_style.dart';
 import 'package:stikev/utils/widgets/custom_text_field.dart';
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
@@ -21,9 +20,10 @@ class ClienteForm extends StatefulWidget {
   final int routeId;
   final int interes;
 
-  ClienteForm({required this.routeId, required this.interes});
+  const ClienteForm({super.key, required this.routeId, required this.interes});
 
   @override
+  // ignore: library_private_types_in_public_api
   _ClienteFormState createState() => _ClienteFormState();
 }
 
@@ -37,21 +37,27 @@ class _ClienteFormState extends State<ClienteForm> {
   final TextEditingController direccionController = TextEditingController();
   final LoginController loginController = Get.put(LoginController());
   final ClientesController clientesController = Get.put(ClientesController());
-  final List<int> cuotasOptions = [1, 2, 3, 4, 5];
-  int selectedCuotas = 1;
+  final List<int> cuotasOptions = List<int>.generate(30, (index) => index + 1);
+  int selectedCuotas = 0;
   double totalAPagar = 0.0;
 
   final NumberFormat currencyFormatter =
       NumberFormat.currency(locale: 'es_ES', symbol: '\$', decimalDigits: 0);
-
+  final TextEditingController cuotasController = TextEditingController();
   // Listado de frecuencias de pago
-  final List<String> frecuenciaOptions = ['Mensual', 'Quincenal', 'Semanal'];
-  String? selectedFrecuencia ;
+  final List<String> frecuenciaOptions = [
+    'Mensual',
+    'Quincenal',
+    'Semanal',
+    'Diaria'
+  ];
+  String? selectedFrecuencia;
 
   @override
   void initState() {
     super.initState();
     interesController.text = widget.interes.toString();
+    cuotasController.text = selectedCuotas.toString();
   }
 
   // Añade esta función en la clase _ClienteFormState
@@ -109,9 +115,9 @@ class _ClienteFormState extends State<ClienteForm> {
 
     // Convertir el mapa a JSON
     final String jsonData = jsonEncode(data);
-    debugPrint(jsonData);
-
-    try {
+    debugPrint(AppConfig.clientApiUrl);
+    debugPrint("${loginController.token}" );
+    
       final response = await http.post(
         Uri.parse(AppConfig.clientApiUrl),
         headers: {
@@ -120,7 +126,7 @@ class _ClienteFormState extends State<ClienteForm> {
         },
         body: jsonData,
       );
-
+      print(response.statusCode);
       if (response.statusCode == 201) {
         // Si la respuesta es exitosa, manejar la respuesta aquí
         clientesController.fetchPrestamos(
@@ -130,11 +136,9 @@ class _ClienteFormState extends State<ClienteForm> {
         Get.back();
       } else {
         // Manejar errores de la respuesta
-        print('Error al enviar los datos: ${response.statusCode}');
+        debugPrint('Error al enviar los datos: ${response.statusCode}');
       }
-    } catch (e) {
-      print('Excepción al enviar los datos: $e');
-    }
+   
   }
 
   void _calcularTotal() {
@@ -150,29 +154,40 @@ class _ClienteFormState extends State<ClienteForm> {
   // Función para calcular las fechas de las cuotas según la frecuencia
   List<DateTime> _calcularFechasCuotas(DateTime startDate) {
     List<DateTime> fechasCuotas = [];
+    DateTime currentDate = startDate;
 
-    // Se incrementa en 1 el número de cuotas a procesar
-    for (int i = 0; i < selectedCuotas + 1; i++) {
+    for (int i = 0; i < selectedCuotas; i++) {
       switch (selectedFrecuencia) {
         case 'Mensual':
-          fechasCuotas.add(
-              DateTime(startDate.year, startDate.month + i, startDate.day));
+          currentDate = DateTime(
+              currentDate.year, currentDate.month + 1, currentDate.day);
           break;
         case 'Quincenal':
-          fechasCuotas.add(startDate.add(Duration(days: 15 * i)));
+          currentDate = currentDate.add(const Duration(days: 15));
           break;
         case 'Semanal':
-          fechasCuotas.add(startDate.add(Duration(days: 7 * i)));
+          currentDate = currentDate.add(const Duration(days: 7));
+          break;
+        case 'Diaria':
+          // Avanzar al día siguiente, pero evitar domingos
+          do {
+            currentDate = currentDate.add(const Duration(days: 1));
+          } while (currentDate.weekday == DateTime.sunday); // Saltar domingos
           break;
       }
-    }
-
-    // Siempre eliminar la primera fecha
-    if (fechasCuotas.isNotEmpty) {
-      fechasCuotas.removeAt(0);
+      fechasCuotas.add(currentDate);
     }
 
     return fechasCuotas;
+  }
+
+  void _updateCuotas(String value) {
+    int parsedValue = int.tryParse(value) ??
+        1; // Si el parsing falla, establece el valor por defecto en 1
+    setState(() {
+      selectedCuotas = parsedValue;
+      _calcularTotal(); // Recalcular el total al cambiar las cuotas
+    });
   }
 
   @override
@@ -194,7 +209,7 @@ class _ClienteFormState extends State<ClienteForm> {
               CustomTextField(
                 controller: nombreController,
                 labelText: 'Nombre',
-                prefixIcon: Icon(Icons.person),
+                prefixIcon: const Icon(Icons.person),
                 height: 70,
               ),
               const SizedBox(height: 10),
@@ -202,7 +217,7 @@ class _ClienteFormState extends State<ClienteForm> {
                 controller: identificacionController,
                 labelText: 'Identificación',
                 keyboardType: TextInputType.number,
-                prefixIcon: Icon(Icons.credit_card),
+                prefixIcon: const Icon(Icons.credit_card),
                 obscureText: true,
                 height: 70,
               ),
@@ -211,14 +226,14 @@ class _ClienteFormState extends State<ClienteForm> {
                 controller: telefonoController,
                 labelText: 'Teléfono',
                 keyboardType: TextInputType.phone,
-                prefixIcon: Icon(Icons.phone),
+                prefixIcon: const Icon(Icons.phone),
                 height: 70,
               ),
               const SizedBox(height: 10),
               CustomTextField(
                 controller: direccionController,
                 labelText: 'Dirección',
-                prefixIcon: Icon(Icons.home),
+                prefixIcon: const Icon(Icons.home),
                 height: 70,
               ),
               const SizedBox(height: 10),
@@ -226,7 +241,7 @@ class _ClienteFormState extends State<ClienteForm> {
                 controller: valorPrestadoController,
                 labelText: 'Valor Prestado',
                 keyboardType: TextInputType.number,
-                prefixIcon: Icon(Icons.attach_money),
+                prefixIcon: const Icon(Icons.attach_money),
                 inputFormatters: [
                   CurrencyTextInputFormatter(
                     NumberFormat.currency(
@@ -245,7 +260,7 @@ class _ClienteFormState extends State<ClienteForm> {
                 controller: interesController,
                 labelText: 'Tasa de Interés (%)',
                 keyboardType: TextInputType.number,
-                prefixIcon: Icon(Icons.percent),
+                prefixIcon: const Icon(Icons.percent),
                 height: 70,
                 onChanged: (value) {
                   _calcularTotal();
@@ -253,28 +268,21 @@ class _ClienteFormState extends State<ClienteForm> {
               ),
               const SizedBox(height: 10),
 
-              DropdownButtonFormField<int>(
-                decoration: InputDecoration(
-                  labelText: 'Cuotas',
-                  prefixIcon: Icon(Icons.calendar_today),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                items: cuotasOptions.map((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text('$value cuota${value > 1 ? 's' : ''}'),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedCuotas = value ?? 1;
-                    _calcularTotal();
-                  });
+              CustomTextField(
+                controller: cuotasController,
+                labelText: 'Cuotas',
+                keyboardType: TextInputType.number,
+                prefixIcon: const Icon(Icons.calendar_today),
+                height: 70,
+                onChanged: _updateCuotas,
+                validator: (value) {
+                  final number = int.tryParse(value ?? '');
+                  debugPrint('$number');
+                  if (number == null || number < 1 || number > 30) {
+                    return 'la cuota debe estar entre 1 y 30';
+                  }
+                  return null; 
                 },
-                isExpanded: true,
-                hint: Text('Seleccione las cuotas'),
               ),
               const SizedBox(height: 10),
 
@@ -282,7 +290,7 @@ class _ClienteFormState extends State<ClienteForm> {
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Frecuencia de Pago',
-                  prefixIcon: Icon(Icons.calendar_today),
+                  prefixIcon: const Icon(Icons.calendar_today),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -300,13 +308,14 @@ class _ClienteFormState extends State<ClienteForm> {
                   });
                 },
                 isExpanded: true,
-                hint: Text('Seleccione la frecuencia de pago'),
+                hint: const Text('Seleccione la frecuencia de pago'),
               ),
 
               const SizedBox(height: 20),
               Text(
                 'Valor Total del Préstamo: ${currencyFormatter.format(totalAPagar)}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
 
@@ -349,7 +358,6 @@ class _ClienteFormState extends State<ClienteForm> {
                     rows: List<DataRow>.generate(selectedCuotas, (index) {
                       double montoCuota = totalAPagar / selectedCuotas;
                       DateTime startDate = DateTime.now();
-                      List<DateTime> fechasCuotas = [];
                       switch (selectedFrecuencia) {
                         case 'Mensual':
                           startDate.add(Duration(
@@ -359,10 +367,10 @@ class _ClienteFormState extends State<ClienteForm> {
                               ));
                           break;
                         case 'Quincenal':
-                          startDate.add(Duration(days: 15));
+                          startDate.add(const Duration(days: 15));
                           break;
                         case 'Semanal':
-                          startDate.add(Duration(days: 7));
+                          startDate.add(const Duration(days: 7));
                           break;
                       }
                       List<DateTime> fechas = _calcularFechasCuotas(startDate);
@@ -375,7 +383,7 @@ class _ClienteFormState extends State<ClienteForm> {
                               "\$ ${currencyFormatter.format(montoCuota).replaceAll('\$', '')}",
                               style: const TextStyle(fontSize: 14))),
                           DataCell(Text(
-                              DateFormat('dd-MM-yyyy').format(fechas[index]),
+                              DateFormat('dd/MM/yyyy').format(fechas[index]),
                               style: const TextStyle(fontSize: 14))),
                         ],
                       );

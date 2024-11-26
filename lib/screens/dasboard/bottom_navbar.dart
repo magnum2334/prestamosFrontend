@@ -52,11 +52,11 @@ class _BottomBarState extends State<BottomBar> {
   Widget _getSelectedWidget() {
     switch (_selectedIndex) {
       case 0:
-        return StatisticsScreen(); // Pestaña de estadísticas
+        return const StatisticsScreen(); // Pestaña de estadísticas
       case 1:
         return RoutesWidget(); // Pestaña de rutas
       case 2:
-        return const ProfilePage1(); // Pestaña de perfil
+        return const ProfilePage(); // Pestaña de perfil
       default:
         return Container();
     }

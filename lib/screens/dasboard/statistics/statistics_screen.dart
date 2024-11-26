@@ -1,205 +1,285 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // Para los gráficos circulares y de barras.
+import 'package:flutter_html/flutter_html.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
+import 'package:stikev/getX/LoginController.dart';
+import 'package:stikev/getX/ProfileController.dart';
+import 'package:stikev/utils/main_style.dart';
+import 'package:stikev/utils/route_config.dart';
+import 'package:stikev/utils/widgets/custom_date_picker.dart';
+class StatisticsScreen extends StatefulWidget {
+  const StatisticsScreen({super.key});
 
-class StatisticsScreen extends StatelessWidget {
+  @override
+  _StatisticsScreenState createState() => _StatisticsScreenState();
+}
+
+class _StatisticsScreenState extends State<StatisticsScreen> {
+  final TextEditingController fechaInicioController = TextEditingController();
+  final TextEditingController fechaFinController = TextEditingController();
+  final ProfileController profileController = Get.find();
+  final LoginController _loginController = Get.put(LoginController());
+
+  bool isLoading = true;
+  String gananciasTotal = '';
+  String totalAPagar = '';
+  String contadorPrestamosActivos = '';
+  int cierreCartera = 0;
+  List<dynamic> abonosHoy = [];
+  List<dynamic> prestamosHoy = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final hoy = DateTime.now();
+    fechaInicioController.text = hoy.toIso8601String().split('T').first;
+    fechaFinController.text = hoy.toIso8601String().split('T').first;
+    fetchData();
+  }
+
+  Future<void> fetchData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final String fechaInicio = fechaInicioController.text;
+    final String fechaFin = fechaFinController.text;
+    final String url = AppConfig.cartera(
+      profileController.userId.toString(),
+      fechaInicio,
+      fechaFin,
+    );
+
+    try {
+      final response = await http.get(Uri.parse(url), headers: {
+        'Authorization': 'Bearer ${_loginController.token}',
+      });
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          gananciasTotal = data['gananciasTotal'].toString();
+          contadorPrestamosActivos = data['contadorPrestamosActivos'].toString();
+          abonosHoy = data['abonosHoy'];
+          prestamosHoy = data['prestamosHoy'];
+          cierreCartera = data['cierreCartera'];
+          isLoading = false;
+        });
+      } else {
+        debugPrint('Error al obtener los datos: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error al hacer la petición: ${e.toString()}');
+    }
+  }
+
+ exportToPDFAndShare() async {
+  // Asegurarse de que no afecte a la UI
+  setState(() {
+    isLoading = true;
+  });
+
+  // Definir el HTML que quieres convertir
+  String htmlContent = """
+    <html>
+      <body>
+        <h1 style="color: #3A7D44;">Resumen de Cartera</h1>
+        <p style="font-size: 16px; color: #666666;">Este es el total de la cartera: <strong>\$5000</strong></p>
+        <p style="font-size: 14px; color: #999999;">Este es el total prestado en préstamos actuales.</p>
+      </body>
+    </html>
+    """;
+
+  // Crear el PDF
+  final pdf = pw.Document();
+
+  // Agregar el contenido HTML como texto al PDF
+  pdf.addPage(
+    pw.Page(
+      build: (pw.Context context) {
+        return pw.Center(
+          child: pw.Text(htmlContent),
+        );
+      },
+    ),
+  );
+
+  // Obtener el directorio temporal
+  final directory = await getApplicationDocumentsDirectory();
+  final file = File('${directory.path}/resumen_cartera.pdf');
+
+  // Guardar el archivo PDF
+  await file.writeAsBytes(await pdf.save());
+
+  // Compartir el PDF
+  await Share.shareXFiles([XFile('${directory.path}/resumen_cartera.pdf')], text: 'Resumen de Cartera');
+
+  setState(() {
+    isLoading = false; // Volver a cambiar el estado cuando haya terminado
+  });
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Panel de Control Empresarial'),
+        title: const Text('Resumen de Cartera'),
+        actions: [
+          ElevatedButton(
+            onPressed: fetchData,
+            child: const Icon(Icons.refresh, color: AppStyles.thirdColor),
+          ),
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+            onPressed: exportToPDFAndShare,
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildDoubleColumnCard(
-              title1: 'Total Prestado',
-              value1: '\$120,000',
-              icon1: Icons.attach_money,
-              title2: 'Total a Pagar',
-              value2: '\$150,000',
-              icon2: Icons.payment,
-            ),
-            SizedBox(height: 16),
-            _buildDoubleColumnCard(
-              title1: 'Clientes Activos',
-              value1: '300',
-              icon1: Icons.group,
-              title2: 'Préstamos Activos',
-              value2: '120',
-              icon2: Icons.credit_card,
-            ),
-            SizedBox(height: 16),
-            _buildListCard('Próximos Pagos', Icons.calendar_today, _buildUpcomingPaymentsList()),
-            SizedBox(height: 16),
-            _buildChartCard('Préstamos por Estado', Icons.pie_chart, _buildPieChart()),
-            SizedBox(height: 16),
-            _buildChartCard('Monto Prestado por Cliente', Icons.bar_chart, _buildBarChart()),
-            SizedBox(height: 16),
-            _buildListCard('Clientes con Deudas Pendientes', Icons.warning, _buildPendingClientsList()),
-          ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppStyles.thirdColor, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  DatePickerBox(
+                    controller: fechaInicioController,
+                    labelText: 'Fecha Inicio',
+                    height: 60,
+                  ),
+                  const SizedBox(width: 10),
+                  DatePickerBox(
+                    controller: fechaFinController,
+                    labelText: 'Fecha Fin',
+                    height: 60,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Expanded(
+                      child: ListView(
+                        children: [
+                          _buildCard(
+                              Icons.account_balance,
+                              'Cerrar Cartera',
+                              '\$$cierreCartera',
+                              'Este es el total de la cartera'),
+                          _buildCard(
+                              Icons.monetization_on,
+                              'ganancias activas',
+                              gananciasTotal,
+                              'Este es el total prestado en préstamos actuales'),
+                          _buildCard(
+                              Icons.payment,
+                              'Total a Pagar',
+                              totalAPagar,
+                              'Este es el total que se debe pagar en el periodo seleccionado'),
+                          _buildCard(
+                              Icons.attach_money,
+                              'Préstamos Activos',
+                              contadorPrestamosActivos,
+                              'Cantidad de préstamos que están activos actualmente'),
+                          const SizedBox(height: 20),
+                          _buildAbonosList(),
+                        ],
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDoubleColumnCard({required String title1, required String value1, required IconData icon1, required String title2, required String value2, required IconData icon2}) {
+  Widget _buildCard(IconData icon, String title, String subtitle, String description) {
     return Card(
-      elevation: 4,
+      color: Colors.white,
+      elevation: 6,
+      margin: const EdgeInsets.symmetric(vertical: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildColumnItem(title1, value1, icon1),
-            VerticalDivider(),
-            _buildColumnItem(title2, value2, icon2),
+            Icon(icon, size: 40, color: AppStyles.thirdColor),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                  const SizedBox(height: 8),
+                  Text(subtitle, style: const TextStyle(fontSize: 20, color: Colors.green)),
+                  const SizedBox(height: 8),
+                  Text(description, style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildColumnItem(String title, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, size: 36, color: Colors.blue),
-        SizedBox(height: 8),
-        Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(fontSize: 24, color: Colors.black87),
-        ),
-      ],
-    );
-  }
+  Widget _buildAbonosList() {
+    if (abonosHoy.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        alignment: Alignment.center,
+        child: const Text('No hay abonos realizados hoy.', style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+      );
+    }
 
-  Widget _buildListCard(String title, IconData icon, Widget content) {
     return Card(
-      elevation: 4,
+      color: Colors.white,
+      elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            leading: Icon(icon, color: Colors.blue),
-            title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: content,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUpcomingPaymentsList() {
-    // Lista simulada de próximos pagos
-    return const Column(
-      children: [
-        ListTile(
-          leading: Icon(Icons.attach_money),
-          title: Text('Cliente 1'),
-          subtitle: Text('Pago: \$500'),
-          trailing: Text('05/10/2024'),
-        ),
-        ListTile(
-          leading: Icon(Icons.attach_money),
-          title: Text('Cliente 2'),
-          subtitle: Text('Pago: \$750'),
-          trailing: Text('06/10/2024'),
-        ),
-        // Añadir más pagos según sea necesario
-      ],
-    );
-  }
-
-  Widget _buildPieChart() {
-    return SizedBox(
-      height: 200,
-      child: PieChart(
-        PieChartData(
-          sections: [
-            PieChartSectionData(color: Colors.green, value: 40, title: 'Aprobado'),
-            PieChartSectionData(color: Colors.red, value: 30, title: 'Rechazado'),
-            PieChartSectionData(color: Colors.orange, value: 20, title: 'Pendiente'),
-            PieChartSectionData(color: Colors.blue, value: 10, title: 'Otro'),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Abonos Realizados Hoy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+            const SizedBox(height: 10),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: abonosHoy.length,
+              itemBuilder: (context, index) {
+                return _buildAbonoTile(abonosHoy[index]);
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBarChart() {
-    return SizedBox(
-      height: 200,
-      child: BarChart(
-        BarChartData(
-          barGroups: [
-            BarChartGroupData(
-              x: 0,
-              barRods: [BarChartRodData(toY: 8, fromY: 0, color: Colors.blue)],
-              showingTooltipIndicators: [0],
-            ),
-            BarChartGroupData(
-              x: 1,
-              barRods: [BarChartRodData(toY: 10, fromY: 0, color: Colors.blue)],
-              showingTooltipIndicators: [0],
-            ),
-            BarChartGroupData(
-              x: 2,
-              barRods: [BarChartRodData(toY: 6, fromY: 0, color: Colors.blue)],
-              showingTooltipIndicators: [0],
-            ),
-            // Añadir más barras según sea necesario
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPendingClientsList() {
-    // Lista simulada de clientes con deudas pendientes
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(Icons.person),
-          title: Text('Cliente A'),
-          subtitle: Text('Deuda: \$1,200'),
-        ),
-        ListTile(
-          leading: Icon(Icons.person),
-          title: Text('Cliente B'),
-          subtitle: Text('Deuda: \$950'),
-        ),
-        // Añadir más clientes según sea necesario
-      ],
-    );
-  }
-
-  Widget _buildChartCard(String title, IconData icon, Widget chart) {
+  Widget _buildAbonoTile(Map<String, dynamic> abono) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            leading: Icon(icon, color: Colors.blue),
-            title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: chart,
-          ),
-        ],
+      color: Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: ListTile(
+        leading: const Icon(Icons.payment, color: Colors.green),
+        title: Text(abono['monto'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('Fecha: ${abono['fecha']}'),
       ),
     );
   }

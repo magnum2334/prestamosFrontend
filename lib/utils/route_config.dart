@@ -17,4 +17,5 @@ class AppConfig {
   static String rutaCobradorApiUrl(String cobradorId) => '$apiServerIp/ruta/cobrador/$cobradorId';
   static String rutaPrestamoApiUrl(String rutaId) => '$apiServerIp/cliente/prestamos/ruta/$rutaId';
   static String rutaPrestamoPagoApiUrl(String prestamoId) => '$apiServerIp/cliente/prestamo/$prestamoId';
+  static String cartera(String userId, String fechaInicio, String fechaFinal) => '$apiServerIp/cliente/cartera/$userId/$fechaInicio/$fechaFinal';
 }

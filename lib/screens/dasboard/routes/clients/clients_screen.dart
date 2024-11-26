@@ -5,6 +5,7 @@ import 'package:stikev/getX/ClienteCrontroller.dart';
 import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/screens/dasboard/routes/clients/form_client_sreem.dart';
 import 'package:stikev/screens/dasboard/routes/clients/widget/pay_modal.dart';
+import 'package:stikev/utils/animated_icon.dart';
 import 'package:stikev/utils/main_style.dart';
 import 'package:stikev/utils/route_config.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -115,7 +116,11 @@ class _ClientesScreenState extends State<ClientesScreen> {
                               itemCount: filteredPrestamos.length,
                               itemBuilder: (context, index) {
                                 final prestamo = filteredPrestamos[index];
-
+                                Widget iconStatus =
+                                    (prestamo['estado'].trim() == 'Mora')
+                                        ? AnimatedIconWidget()
+                                        : const Icon(Icons.star,
+                                            color: Colors.green);
                                 // Calcular el valor abonado
                                 final abonado = prestamo['saldo'];
 
@@ -160,13 +165,26 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                                 ),
                                               ],
                                             ),
-                                            const Icon(
-                                              Icons.more_horiz,
-                                              color: AppStyles.thirdColor,
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  prestamo['estado'].trim(),
+                                                  style: const TextStyle(
+                                                    color: Color.fromARGB(
+                                                        255, 0, 0, 0),
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 19,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                iconStatus,
+                                              ],
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 16),
+                                        _buildInfoRow('Valor prestado:',
+                                            "\$ ${currencyFormatter.format(prestamo['valorPrestado']).replaceAll('\$', '')}"),
                                         _buildInfoRow('Total a pagar:',
                                             "\$ ${currencyFormatter.format(prestamo['valorTotal']).replaceAll('\$', '')}"),
                                         _buildInfoRow('Restante:',
@@ -256,7 +274,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
           value,
           style: const TextStyle(
             fontSize: 16,
-            color: Colors.blueGrey,
+            color: Colors.green,
           ),
         ),
       ],

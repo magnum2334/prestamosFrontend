@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stikev/screens/dasboard/bottom_navbar.dart';
 import 'package:stikev/screens/login/login_screen.dart';
-import 'package:stikev/screens/login/sing_up_screen.dart';
 import 'package:stikev/screens/verify_screen.dart';
 class MainView extends StatefulWidget {
   const MainView({super.key});

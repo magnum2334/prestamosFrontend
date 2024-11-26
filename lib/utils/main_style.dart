@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppStyles {
-  static const Color text = Color.fromARGB(255, 2, 51, 86);
-  static const Color thirdColor = Color.fromARGB(255, 9, 38, 130);
+  static const Color text = Color.fromARGB(255, 5, 79, 132);
+  static const Color thirdColor = Color.fromARGB(255, 1, 57, 100);
 
   // Método para obtener el AppBarTheme
   static AppBarTheme get appBarTheme {

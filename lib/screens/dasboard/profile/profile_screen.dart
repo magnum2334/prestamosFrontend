@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/utils/main_style.dart';
+import 'package:stikev/utils/widgets/notification_service.dart';
 
 
-class ProfilePage1 extends StatelessWidget {
-  const ProfilePage1({Key? key}) : super(key: key);
-
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({Key? key}) : super(key: key);
+  
   @override
   Widget build(BuildContext context) {
     final ProfileController profileController = Get.find();
-
+    final notificationService = NotificationService();
     return Scaffold(
       body: Column(
         children: [
@@ -37,7 +38,12 @@ class ProfilePage1 extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          notificationService.showBasicNotification(
+                          title: 'Notificación Básica',
+                          body: 'Este es el cuerpo de la notificación básica',
+                        );
+                        },
                         icon: const Icon(Icons.support, size: 28),
                         label: const Text(
                           "Soporte",

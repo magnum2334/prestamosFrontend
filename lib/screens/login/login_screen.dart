@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
             'Bearer ${_loginController.token}', // Añade el token Bearer
       },
     );
-
+    print(url);
     if (response.statusCode == 200) {
       var data =
           jsonDecode(response.body) as List; // Asegúrate de que es una lista
@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> fetchUserProfile() async {
     final url = AppConfig
         .profileApiUrl; // Asegúrate de definir esta URL en tu configuración
-    final response = await http.get(
+    var response = await http.get(
       Uri.parse(url),
       headers: {
         'Authorization':
@@ -119,7 +119,6 @@ class _LoginScreenState extends State<LoginScreen> {
           'password': password,
         },
       );
-      print('response.statusCode ${response.statusCode}');
       if (response.statusCode == 201) {
         var jsonResponse = jsonDecode(response.body);
         String accessToken = jsonResponse['accessToken'];
@@ -137,13 +136,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         // Acción en caso de fallo
-        AlertHelper.showErrorAlert(context, 'Login failed. Please try again.');
+        AlertHelper.showErrorAlert(context, ' ${response.statusCode}');
       }
     } catch (e) {
       print("error login " + e.toString());
       // En caso de error en la solicitud
       AlertHelper.showErrorAlert(
-          context, 'Error occurred. Please try again later.');
+          context, 'Error . ${e.toString()}');
     } finally {
       setState(() {
         isLoading = false; // Finaliza el estado de carga
