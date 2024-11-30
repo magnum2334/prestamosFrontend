@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Asegúrate de agregar esta dependencia
 
 class LoginController extends GetxController {
+  var ruta = ''.obs;
   var email = ''.obs;
   var password = ''.obs;
   var token = ''.obs;

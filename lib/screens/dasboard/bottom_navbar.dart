@@ -22,13 +22,23 @@ class _BottomBarState extends State<BottomBar> {
 
   final LoginController _loginController = Get.put(LoginController());
   final ProfileController _profileController = Get.put(ProfileController());
-  
+  final RouteController _routeController = Get.put(RouteController());
+
   @override
   void initState() {
     super.initState();
-    _profileController.displayProfileData();
+     data();
   }
 
+  Future<void> data() async {
+   try {
+      _loginController.token;
+      final profile = await _profileController.fetchUserProfile(_loginController.token.toString());
+      await _routeController.fetchRoutesByCobrador(_loginController.token.toString(), profile['user']['id']);
+   } catch (e) {
+     debugPrint("debug: ${_profileController.userId}");
+   }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

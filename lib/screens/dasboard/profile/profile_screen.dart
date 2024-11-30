@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/getX/ProfileController.dart';
+import 'package:stikev/getX/RouteController.dart';
+import 'package:stikev/main_view.dart';
 import 'package:stikev/utils/main_style.dart';
 import 'package:stikev/utils/widgets/notification_service.dart';
-
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -11,6 +13,10 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ProfileController profileController = Get.find();
+    final RouteController routeController = Get.find();
+    final LoginController loginController = Get.put(LoginController());
+   
+    
     final notificationService = NotificationService();
     return Scaffold(
       body: Column(
@@ -40,9 +46,9 @@ class ProfilePage extends StatelessWidget {
                       ElevatedButton.icon(
                         onPressed: () {
                           notificationService.showBasicNotification(
-                          title: 'Notificación Básica',
-                          body: 'Este es el cuerpo de la notificación básica',
-                        );
+                            title: 'Notificación Básica',
+                            body: 'Este es el cuerpo de la notificación básica',
+                          );
                         },
                         icon: const Icon(Icons.support, size: 28),
                         label: const Text(
@@ -73,6 +79,23 @@ class ProfilePage extends StatelessWidget {
                   const Text(
                     "Si encuentras un error en la app, por favor repórtalo.",
                     style: TextStyle(fontSize: 15, color: Colors.redAccent),
+                  ),
+                  const SizedBox(height: 20),
+                  // Botón de Logout
+                  ElevatedButton(
+                    
+                    onPressed: () {
+                      loginController.clearToken();
+                      routeController.clearRoutes();
+                      profileController.clearAllData(); // Llamar al método de logout
+                      Get.offAll(() => const MainView()); // Redirigir al login
+                    },
+                    // ignore: sort_child_properties_last
+                    child: const Text("Cerrar sesión", style: TextStyle(fontSize: 18, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppStyles.thirdColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                    ),
                   ),
                 ],
               ),
@@ -106,8 +129,7 @@ class _ProfileInfoRow extends StatelessWidget {
                     if (_items.indexOf(item) != 0) const VerticalDivider(),
                     Expanded(child: _singleItem(context, item)),
                   ],
-                )))
-            .toList(),
+                ))).toList(),
       ),
     );
   }

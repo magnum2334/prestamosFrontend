@@ -21,78 +21,10 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final LoginController _loginController = Get.put(LoginController());
-  final ProfileController _profileController =
-      Get.put(ProfileController()); // Instancia del controlador de perfil
-  final RouteController _routeController = Get.put(RouteController());
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _rutaController = TextEditingController();
   bool isLoading = false; // Variable para manejar el estado de carga
-
-  Future<void> fetchRoutesByCobrador() async {
-    final cobradorId =
-        _profileController.userId.value; // Cambia esto al ID que necesitas
-    final url = AppConfig.rutaCobradorApiUrl(cobradorId.toString());
-
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'Authorization':
-            'Bearer ${_loginController.token}', // Añade el token Bearer
-      },
-    );
-    print(url);
-    if (response.statusCode == 200) {
-      var data =
-          jsonDecode(response.body) as List; // Asegúrate de que es una lista
-      // Cargar las rutas en el controlador
-      List<Map<String, dynamic>> routes = data.map((item) {
-        // Asegúrate de manejar posibles campos null
-        return {
-          'id': item['id'] ?? '', // Proporciona un valor predeterminado
-          'nombre': item['nombre'] ?? '',
-          'cobradorId': item['cobradorId'] ?? 0,
-          'interes': item['interes'] ?? 0,
-          'tMaximoPrestamo': item['tMaximoPrestamo'] ?? 0.0,
-          'interesLibre': item['interesLibre'] ?? false,
-          'fecha_creacion': item['fecha_creacion'] ?? '',
-          'capitalId': item['capitalId'] ?? 0,
-        };
-      }).toList();
-      _routeController.loadRoutes(routes);
-    } else {
-      // Manejo del error
-      debugPrint("Error al obtener rutas: ${response.statusCode}");
-    }
-  }
-
-  Future<void> fetchUserProfile() async {
-    final url = AppConfig
-        .profileApiUrl; // Asegúrate de definir esta URL en tu configuración
-    var response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'Authorization':
-            'Bearer ${_loginController.token}', // Añade el token Bearer
-      },
-    );
-
-    if (response.statusCode == 200) {
-      var jsonResponse = jsonDecode(response.body);
-      // Establecer los datos del perfil en el ProfileController
-      _profileController.setProfileData(
-        jsonResponse['user']['id'],
-        jsonResponse['user']['email'],
-        jsonResponse['user']['nombre'],
-        jsonResponse['user']['telefono'],
-        jsonResponse['user']['rolId'],
-        jsonResponse['user']['estado'],
-      );
-      print("Perfil del usuario cargado: ${_profileController.email.value}");
-    } else {
-      // Manejo del error
-      debugPrint("Error al obtener perfil: ${response.statusCode}");
-    }
-  }
 
   Future<void> _login() async {
     String email = _loginController.email.value;
@@ -123,11 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
         var jsonResponse = jsonDecode(response.body);
         String accessToken = jsonResponse['accessToken'];
         _loginController.setToken(accessToken); // Guarda el token
-
-        // Ahora que tienes el token, realiza las peticiones para las rutas y el perfil
-        await fetchUserProfile();
-        await fetchRoutesByCobrador();
-
         // Navegar a la siguiente página
         widget.controller.animateToPage(
           1,
@@ -181,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     CustomTextField(
                       controller: _emailController,
                       labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: const Icon(Icons.email),
                       onChanged: (value) {
                         _loginController.setEmail(value);
                       },
@@ -192,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Password',
                       obscureText: true,
                       keyboardType: TextInputType.visiblePassword,
-                      prefixIcon: Icon(Icons.password_sharp),
+                      prefixIcon: const Icon(Icons.password_sharp),
                       height: 70,
                       onChanged: (value) {
                         _loginController.setPassword(value);
@@ -207,46 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             buttonText: 'Sign In',
                           ),
                     SizedBox(height: screenHeight * 0.02),
-                    Row(
-                      children: [
-                        Text(
-                          'Don’t have an account?',
-                          style: TextStyle(
-                            color: Color(0xFF837E93),
-                            fontSize: screenWidth * 0.04,
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(width: screenWidth * 0.02),
-                        InkWell(
-                          onTap: () {
-                            widget.controller.animateToPage(1,
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.ease);
-                          },
-                          child: Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              color: AppStyles.text,
-                              fontSize: screenWidth * 0.04,
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-                    Text(
-                      'Forget Password?',
-                      style: TextStyle(
-                        color: AppStyles.text,
-                        fontSize: screenWidth * 0.04,
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ],
                 ),
               ),
