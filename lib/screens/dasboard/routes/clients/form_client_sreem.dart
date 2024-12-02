@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 // ignore: depend_on_referenced_packages
 import 'package:intl/intl.dart'; // Import intl for DateFormat and NumberFormat
@@ -62,20 +63,54 @@ class _ClienteFormState extends State<ClienteForm> {
 
   // Añade esta función en la clase _ClienteFormState
   Future<void> enviarDatos() async {
-    final ProfileController profileController = Get.find();
-    // Crea un mapa con los datos del cliente
-    final Map<String, dynamic> cliente = {
-      'nombre': nombreController.text,
-      'identificacion': identificacionController.text,
-      'telefono': telefonoController.text,
-      'direccion': direccionController.text,
-      'rutaId': widget.routeId,
-    };
+           // Validar que el nombre no esté vacío
+      if (nombreController.text.isEmpty) {
+        Get.snackbar('Error', 'El nombre es obligatorio.',
+            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        return; // Evita continuar si el nombre no está presente
+      }
+
+      // Validar que el valor prestado no sea vacío o no válido
+      int valorPrestado = int.tryParse(valorPrestadoController.text.replaceAll('.', '')) ?? 0;
+      if (valorPrestado == 0) {
+        Get.snackbar('Error', 'El valor prestado es obligatorio y debe ser un número válido.',
+            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        return; // Evita continuar si el valor prestado es inválido
+      }
+
+      // Validar que el interés no sea vacío o no válido
+      int interes = int.tryParse(interesController.text) ?? 0;
+      if (interes == 0) {
+        Get.snackbar('Error', 'El interés es obligatorio y debe ser un número válido.',
+            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        return; // Evita continuar si el interés es inválido
+      }
+
+      // Validar que se haya seleccionado una cantidad de cuotas
+      if (selectedCuotas == null || selectedCuotas <= 0) {
+        Get.snackbar('Error', 'Debe seleccionar una cantidad válida de cuotas.',
+            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        return; // Evita continuar si no se seleccionó una cantidad válida de cuotas
+      }
+
+      // Validar que se haya seleccionado una frecuencia
+      if (selectedFrecuencia == null ) {
+        Get.snackbar('Error', 'Debe seleccionar una frecuencia.',
+            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
+        return; // Evita continuar si no se seleccionó una frecuencia
+      }
+
+        final ProfileController profileController = Get.find();
+        // Crea un mapa con los datos del cliente
+        final Map<String, dynamic> cliente = {
+          'nombre': nombreController.text,
+          'identificacion': identificacionController.text,
+          'telefono': telefonoController.text,
+          'direccion': direccionController.text,
+          'rutaId': widget.routeId,
+        };
 
     // Cálculo del monto de cada cuota
-    int valorPrestado =
-        int.tryParse(valorPrestadoController.text.replaceAll('.', '')) ?? 0;
-    int interes = int.tryParse(interesController.text) ?? widget.interes;
     double interesTotal = (valorPrestado * interes / 100);
     double montoPorCuota = totalAPagar / selectedCuotas;
 
@@ -249,6 +284,7 @@ class _ClienteFormState extends State<ClienteForm> {
                     enableNegative: false,
                     inputDirection: InputDirection.right,
                   ),
+                  LengthLimitingTextInputFormatter(11),
                 ],
                 height: 70,
                 onChanged: (value) {

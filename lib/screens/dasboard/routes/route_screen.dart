@@ -5,6 +5,8 @@ import 'package:stikev/getX/RouteController.dart';
 import 'package:stikev/screens/dasboard/routes/clients/clients_screen.dart';
 import 'package:stikev/utils/main_style.dart';
 
+import 'clients/widget/gasto_screen.dart';
+
 class RoutesWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -18,12 +20,26 @@ class RoutesWidget extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Rutas Disponibles',
-          style: TextStyle(color: Colors.white), // Color blanco para el texto
+          style: TextStyle(color: Colors.white), 
         ),
-        backgroundColor:
-            AppStyles.thirdColor, // Color de fondo definido en AppStyles
-        iconTheme: const IconThemeData(
-            color: Colors.white), // Color blanco para los iconos (si hay)
+        backgroundColor: AppStyles.thirdColor,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(
+                Icons.attach_money_sharp),
+            tooltip: 'Gastos',
+            onPressed: () {
+              Get.to(
+                () => GastoScreen(),
+                transition: Transition
+                        .cupertinoDialog, 
+                    duration: const Duration(
+                        milliseconds: 500),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.only(
@@ -62,12 +78,12 @@ class RoutesWidget extends StatelessWidget {
                 onTap: () {
                   Get.to(
                     () => ClientesScreen(
-                      routeId: route.id, // Pasar el id de la ruta
-                      routeName: route.name,
-                      interes: route.interes// Pasar el nombre de la ruta
-                    ),
+                        routeId: route.id,
+                        routeName: route.name,
+                        interes: route.interes
+                        ),
                     transition: Transition
-                        .rightToLeft, // Tipo de transición (deslizamiento de derecha a izquierda)
+                        .cupertinoDialog, 
                     duration: const Duration(
                         milliseconds: 500), // Duración de la animación
                   );

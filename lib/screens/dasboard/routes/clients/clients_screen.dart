@@ -118,7 +118,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                 final prestamo = filteredPrestamos[index];
                                 Widget iconStatus =
                                     (prestamo['estado'].trim() == 'Mora')
-                                        ? AnimatedIconWidget()
+                                        ? AnimatedIconWidget(iconColor: Colors.orange,)
                                         : const Icon(Icons.star,
                                             color: Colors.green);
                                 // Calcular el valor abonado
@@ -157,7 +157,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  'Código: ${prestamo['codigo']}',
+                                                  'Código: KAC-${prestamo['id']}',
                                                   style: const TextStyle(
                                                     fontSize: 14,
                                                     color: AppStyles.thirdColor,
@@ -183,10 +183,11 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 16),
-                                        _buildInfoRow('Valor prestado:',
-                                            "\$ ${currencyFormatter.format(prestamo['valorPrestado']).replaceAll('\$', '')}"),
                                         _buildInfoRow('Total a pagar:',
                                             "\$ ${currencyFormatter.format(prestamo['valorTotal']).replaceAll('\$', '')}"),
+                                        _buildInfoRow('Valor prestado:',
+                                            "\$ ${currencyFormatter.format(prestamo['valorPrestado']).replaceAll('\$', '')}"),
+                                        const SizedBox(height: 8),
                                         _buildInfoRow('Restante:',
                                             "\$ ${currencyFormatter.format(restante).replaceAll('\$', '')}"),
                                         const SizedBox(height: 16),

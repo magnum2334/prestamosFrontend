@@ -1,4 +1,7 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -12,6 +15,8 @@ import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/utils/main_style.dart';
 import 'package:stikev/utils/route_config.dart';
 import 'package:stikev/utils/widgets/custom_date_picker.dart';
+import 'package:intl/intl.dart';
+
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
 
@@ -29,9 +34,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   String gananciasTotal = '';
   String totalAPagar = '';
   String contadorPrestamosActivos = '';
+  int totalGastosHoy = 0;
   int cierreCartera = 0;
   List<dynamic> abonosHoy = [];
   List<dynamic> prestamosHoy = [];
+  List<dynamic> gastosHoy = [];
+  final NumberFormat currencyFormatter =
+      NumberFormat.currency(locale: 'es_ES', symbol: '\$', decimalDigits: 0);
 
   @override
   void initState() {
@@ -64,10 +73,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         final data = json.decode(response.body);
         setState(() {
           gananciasTotal = data['gananciasTotal'].toString();
-          contadorPrestamosActivos = data['contadorPrestamosActivos'].toString();
+          contadorPrestamosActivos =
+              data['contadorPrestamosActivos'].toString();
           abonosHoy = data['abonosHoy'];
           prestamosHoy = data['prestamosHoy'];
           cierreCartera = data['cierreCartera'];
+          gastosHoy = data['gastosHoy'];
+          totalGastosHoy = data['totalGastosHoy'];
           isLoading = false;
         });
       } else {
@@ -78,52 +90,173 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 
- exportToPDFAndShare() async {
-  // Asegurarse de que no afecte a la UI
-  setState(() {
-    isLoading = true;
-  });
+  Future<void> exportToPDFAndShare() async {
+    setState(() {
+      isLoading = true; // Mostrar indicador de carga mientras se genera el PDF
+    });
 
-  // Definir el HTML que quieres convertir
-  String htmlContent = """
-    <html>
-      <body>
-        <h1 style="color: #3A7D44;">Resumen de Cartera</h1>
-        <p style="font-size: 16px; color: #666666;">Este es el total de la cartera: <strong>\$5000</strong></p>
-        <p style="font-size: 14px; color: #999999;">Este es el total prestado en préstamos actuales.</p>
-      </body>
-    </html>
-    """;
+    // Crear el documento PDF
+    final pdf = pw.Document();
+    final String fechaHoy = DateFormat('dd/MM/yyyy').format(DateTime.now());
 
-  // Crear el PDF
-  final pdf = pw.Document();
+    // Crear contenido dinámico basado en los datos obtenidos
+    pdf.addPage(
+      pw.MultiPage(
+        build: (context) => [
+          // Título con la fecha actual
+          pw.Center(
+            child: pw.Text(
+              "Resumen de Cartera \n         $fechaHoy",
+              style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.SizedBox(height: 20),
 
-  // Agregar el contenido HTML como texto al PDF
-  pdf.addPage(
-    pw.Page(
-      build: (pw.Context context) {
-        return pw.Center(
-          child: pw.Text(htmlContent),
-        );
-      },
-    ),
-  );
+          // Ganancias totales y préstamos activos
+          pw.Text(
+            "Ganancias Totales: ${gananciasTotal.isNotEmpty ? '\$${currencyFormatter.format(cierreCartera).replaceAll('\$', '')}' : 'Sin datos'}\n"
+            "Gastos Totales: ${gananciasTotal.isNotEmpty ? '\$${currencyFormatter.format(totalGastosHoy).replaceAll('\$', '')}' : 'Sin datos'}\n"
+            "Préstamos Activos: ${contadorPrestamosActivos.isNotEmpty ? contadorPrestamosActivos : 'Sin datos'}",
+            style: const pw.TextStyle(fontSize: 18),
+          ),
+          pw.SizedBox(height: 10),
 
-  // Obtener el directorio temporal
-  final directory = await getApplicationDocumentsDirectory();
-  final file = File('${directory.path}/resumen_cartera.pdf');
+          // Tabla de Préstamos realizados hoy
+          pw.Text(
+            "Préstamos Realizados Hoy:",
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 20),
+          prestamosHoy.isNotEmpty
+              ? pw.Table.fromTextArray(
+                  headers: [
+                    'Código',
+                    'Valor Prestado',
+                    'ValorTotal',
+                    'interes',
+                    'Cuotas',
+                    'Frecuencia',
+                    'Fecha Creación',
+                  ],
+                  data: prestamosHoy.map((prestamo) {
+                    return [
+                      "KAC-${prestamo['id']}",
+                      "\$${currencyFormatter.format(prestamo['valorPrestado']).replaceAll('\$', '')}",
+                      "\$${currencyFormatter.format(prestamo['valorTotal']).replaceAll('\$', '')}",
+                      "${prestamo['interes']}%",
+                      prestamo['cuotas'].toString(),
+                      prestamo['frecuencia'],
+                      prestamo['fecha_creacion']
+                          .replaceAll('T', ' ')
+                          .split('.')[0],
+                    ];
+                  }).toList(),
+                  headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 10,
+                  ),
+                  cellStyle: pw.TextStyle(fontSize: 12),
+                  border: pw.TableBorder.all(width: 1),
+                  cellAlignment:
+                      pw.Alignment.center, // Centrar encabezados y celdas
+                )
+              : pw.Text(
+                  "No hay préstamos realizados hoy.",
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+          pw.SizedBox(height: 20),
 
-  // Guardar el archivo PDF
-  await file.writeAsBytes(await pdf.save());
+          // Tabla de Abonos realizados hoy
+          pw.Text(
+            "Abonos Realizados Hoy:",
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 10),
+          abonosHoy.isNotEmpty
+              ? pw.Table.fromTextArray(
+                  headers: ['Ruta', 'Cliente', 'Monto', 'Fecha'],
+                  data: abonosHoy.map((abono) {
+                    return [
+                      abono['prestamo']['ruta']['nombre'],
+                      abono['prestamo']['Cliente']['nombre'],
+                      "\$${currencyFormatter.format(abono['monto']).replaceAll('\$', '')}",
+                      abono['fecha'].replaceAll('T', ' ').split('.')[0],
+                    ];
+                  }).toList(),
+                  headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 10,
+                  ),
+                  cellStyle: pw.TextStyle(fontSize: 12),
+                  border: pw.TableBorder.all(width: 1),
+                  cellAlignment:
+                      pw.Alignment.center, // Centrar encabezados y celdas
+                )
+              : pw.Text(
+                  "No hay abonos realizados hoy.",
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+         
+          pw.SizedBox(height: 20),
+           pw.Text(
+            "gastos del hoy:",
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+           pw.SizedBox(height: 20),
+          gastosHoy.isNotEmpty
+              ? pw.Table.fromTextArray(
+                  headers: [
+                    'Código',
+                    'Valor',
+                    'Descripción',
+                    'Fecha',
+                  ],
+                  data: gastosHoy.map((gasto) {
+                    return [
+                      "GASTO-${gasto['id']}", // Generamos el código del gasto
+                      "\$${currencyFormatter.format(gasto['valor']).replaceAll('\$', '')}", // Formato de valor
+                      gasto['descripcion'], // Descripción
+                      gasto['fecha'].split('T')[0]  // Fecha formateada
+                    ];
+                  }).toList(),
+                  headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  cellStyle: pw.TextStyle(fontSize: 12),
+                  border: pw.TableBorder.all(width: 1),
+                  cellAlignment:
+                      pw.Alignment.center, // Centrar encabezados y celdas
+                )
+              : pw.Text(
+                  "No hay gastos realizados hoy.",
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
+                ),
+        ],
+      ),
+    );
 
-  // Compartir el PDF
-  await Share.shareXFiles([XFile('${directory.path}/resumen_cartera.pdf')], text: 'Resumen de Cartera');
+    // Guardar el archivo PDF en el almacenamiento temporal
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/resumen_cartera.pdf');
+    await file.writeAsBytes(await pdf.save());
 
-  setState(() {
-    isLoading = false; // Volver a cambiar el estado cuando haya terminado
-  });
-}
+    // Compartir el archivo PDF
+    await Share.shareXFiles([XFile(file.path)], text: 'Resumen de Cartera');
 
+    setState(() {
+      isLoading = false; // Ocultar el indicador de carga
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,25 +310,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         children: [
                           _buildCard(
                               Icons.account_balance,
-                              'Cerrar Cartera',
-                              '\$$cierreCartera',
-                              'Este es el total de la cartera'),
+                              'Cartera del dia',
+                              '\$ ${currencyFormatter.format(cierreCartera).replaceAll('\$', '')}',
+                              'total de la cartera del dia'),
                           _buildCard(
-                              Icons.monetization_on,
-                              'ganancias activas',
-                              gananciasTotal,
-                              'Este es el total prestado en préstamos actuales'),
-                          _buildCard(
-                              Icons.payment,
-                              'Total a Pagar',
-                              totalAPagar,
-                              'Este es el total que se debe pagar en el periodo seleccionado'),
+                              Icons.attach_money,
+                              'gastos del dia',
+                              '\$ ${currencyFormatter.format(totalGastosHoy).replaceAll('\$', '')}',
+                              'Cantidad de préstamos que están activos actualmente'),
                           _buildCard(
                               Icons.attach_money,
                               'Préstamos Activos',
                               contadorPrestamosActivos,
                               'Cantidad de préstamos que están activos actualmente'),
-                          const SizedBox(height: 20),
                           _buildAbonosList(),
                         ],
                       ),
@@ -207,7 +334,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildCard(IconData icon, String title, String subtitle, String description) {
+  Widget _buildCard(
+      IconData icon, String title, String subtitle, String description) {
     return Card(
       color: Colors.white,
       elevation: 6,
@@ -223,9 +351,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                  Text(title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 22)),
                   const SizedBox(height: 8),
-                  Text(subtitle, style: const TextStyle(fontSize: 20, color: Colors.green)),
+                  Text(subtitle,
+                      style:
+                          const TextStyle(fontSize: 20, color: Colors.green)),
                   const SizedBox(height: 8),
                   Text(description, style: const TextStyle(color: Colors.grey)),
                 ],
@@ -242,7 +374,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         alignment: Alignment.center,
-        child: const Text('No hay abonos realizados hoy.', style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+        child: const Text('No hay abonos realizados hoy.',
+            style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
       );
     }
 
@@ -255,7 +388,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Abonos Realizados Hoy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+            const Text('Abonos Realizados Hoy',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
             const SizedBox(height: 10),
             ListView.builder(
               shrinkWrap: true,
@@ -278,8 +412,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
         leading: const Icon(Icons.payment, color: Colors.green),
-        title: Text(abono['monto'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('Fecha: ${abono['fecha']}'),
+        title: Text(
+            "Ruta: ${abono['prestamo']['ruta']['nombre'].toString()}\nCliente: ${abono['prestamo']['Cliente']['nombre'].toString()}\nMonto:${abono['monto'].toString()}\n ",
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle:
+            Text("fecha: ${abono['fecha'].replaceAll('T', ' ').split('.')[0]}"),
       ),
     );
   }

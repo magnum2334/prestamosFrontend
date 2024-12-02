@@ -1,5 +1,8 @@
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:intl/intl.dart';
+import 'package:stikev/getX/LoginController.dart';
 
 class TableProfile {
   static const String tableName = 'profile';
@@ -59,13 +62,17 @@ class TableProfile {
   }
 
   static Future<bool> isTokenRegisteredToday(Database db) async {
+    final LoginController loginController = Get.put(LoginController());
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final result = await db.query(
       tableName,
       where: '$columnTokenUpdateDate = ?',
       whereArgs: [today],
-      limit: 1, // Optimización: solo un registro es necesario
+      limit: 1,
     );
+    if(result.isNotEmpty){
+      loginController.setToken(result.first['token'].toString());
+    }
     return result.isNotEmpty ? true : false;
   }
 

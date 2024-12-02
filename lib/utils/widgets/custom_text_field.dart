@@ -14,7 +14,7 @@ class CustomTextField extends StatelessWidget {
   final Icon? suffixIcon; // Icono a la derecha del campo de texto
   final double height; // Altura del campo de texto
   final List<TextInputFormatter>? inputFormatters; // Lista de inputFormatters
-
+  final int? maxLength;
   const CustomTextField({
     Key? key,
     required this.controller,
@@ -28,6 +28,7 @@ class CustomTextField extends StatelessWidget {
     this.borderNone = false,
     this.height = 60, // Valor predeterminado para la altura
     this.inputFormatters, // Añadir inputFormatters como parámetro
+    this.maxLength
   }) : super(key: key);
 
   @override

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:stikev/getX/ClienteCrontroller.dart';
@@ -23,13 +24,16 @@ class PayModal {
         Map<String, dynamic> prestamo, Map<String, dynamic> pago) {
       final Widget icon;
       final String text;
-
       // Lógica para determinar el ícono y texto a mostrar basado en el pago
       if (pago['monto'] == pago['abono']) {
         icon = const Icon(Icons.check, color: Colors.green);
         text = 'Pagado'; // Texto correspondiente
-      } else if (pago['diasMora'] > 0) {
-        icon = AnimatedIconWidget(); // Cambia según tu implementación
+      } else if (pago['diasMora'] >= 7) {
+        icon = const AnimatedIconWidget(iconColor: Colors.red,); // Cambia según tu implementación
+        text = 'Mora avanzada'; // Texto correspondiente
+      } 
+      else if (pago['diasMora'] > 0 && pago['diasMora'] < 7) {
+        icon = const AnimatedIconWidget(iconColor: Colors.orange,); // Cambia según tu implementación
         text = 'Mora'; // Texto correspondiente
       } else {
         icon =
@@ -304,6 +308,7 @@ class PayModal {
                     enableNegative: false,
                     inputDirection: InputDirection.right,
                   ),
+                  LengthLimitingTextInputFormatter(11),
                 ],
                 height: 70,
                 onChanged: (value) {},

@@ -27,18 +27,20 @@ class _BottomBarState extends State<BottomBar> {
   @override
   void initState() {
     super.initState();
-     data();
+    data();
   }
 
   Future<void> data() async {
-   try {
-      _loginController.token;
-      final profile = await _profileController.fetchUserProfile(_loginController.token.toString());
-      await _routeController.fetchRoutesByCobrador(_loginController.token.toString(), profile['user']['id']);
-   } catch (e) {
-     debugPrint("debug: ${_profileController.userId}");
-   }
+    try {
+      final profile = await _profileController
+          .fetchUserProfile(_loginController.token.toString());
+      await _routeController.fetchRoutesByCobrador(
+          _loginController.token.toString(), profile['user']['id']);
+    } catch (e) {
+      debugPrint("debug: ${_profileController.userId}");
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,9 +64,9 @@ class _BottomBarState extends State<BottomBar> {
   Widget _getSelectedWidget() {
     switch (_selectedIndex) {
       case 0:
-        return const StatisticsScreen(); // Pestaña de estadísticas
+        return RoutesWidget(); // Pestaña de estadísticas
       case 1:
-        return RoutesWidget(); // Pestaña de rutas
+        return const StatisticsScreen(); // Pestaña de rutas
       case 2:
         return const ProfilePage(); // Pestaña de perfil
       default:
@@ -73,17 +75,16 @@ class _BottomBarState extends State<BottomBar> {
   }
 }
 
-
 final _navBarItems = [
-  SalomonBottomBarItem(
-      icon: const Icon(Icons.bar_chart),
-      title: const Text("Estadísticas"),
-      selectedColor: AppStyles.thirdColor),
   SalomonBottomBarItem(
     icon: const Icon(Icons.home),
     title: const Text("Rutas"),
     selectedColor: AppStyles.thirdColor, // Color de fondo azul
   ),
+  SalomonBottomBarItem(
+      icon: const Icon(Icons.bar_chart),
+      title: const Text("Estadísticas"),
+      selectedColor: AppStyles.thirdColor),
   SalomonBottomBarItem(
     icon: const Icon(Icons.person),
     title: const Text("Perfil"),
