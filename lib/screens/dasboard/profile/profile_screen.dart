@@ -7,24 +7,44 @@ import 'package:stikev/main_view.dart';
 import 'package:stikev/utils/main_style.dart';
 import 'package:stikev/utils/widgets/notification_service.dart';
 
+
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
-  
+  final VoidCallback? onNavigateToProfile;
+  const ProfilePage({Key? key, this.onNavigateToProfile}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final ProfileController profileController = Get.find();
     final RouteController routeController = Get.find();
     final LoginController loginController = Get.put(LoginController());
-   
-    
     final notificationService = NotificationService();
+    
     return Scaffold(
-      body: Column(
-        children: [
-          const Expanded(flex: 2, child: _TopPortion()),
-          Expanded(
-            flex: 3,
-            child: Padding(
+      appBar: AppBar(
+        backgroundColor: AppStyles.thirdColor,
+        title: const Text('Perfil'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.exit_to_app, size: 28),
+            onPressed: () {
+              loginController.clearToken();
+              routeController.clearRoutes();
+              profileController.clearAllData(); // Llamar al método de logout
+              Get.offAll(() => const MainView()); // Redirigir al login
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(  // Wrap the entire body in SingleChildScrollView
+        child: Column(
+          children: [
+            // Top portion section with a fixed height
+            SizedBox(
+              height: 250, // Adjust based on your design
+              child: const _TopPortion(),
+            ),
+            // Main profile content
+            Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -40,8 +60,8 @@ class ProfilePage extends StatelessWidget {
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ElevatedButton.icon(
                         onPressed: () {
@@ -58,10 +78,23 @@ class ProfilePage extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24.0, vertical: 12.0),
-                          backgroundColor:
-                              AppStyles.thirdColor, // Color de fondo azul
-                          foregroundColor:
-                              Colors.white, // Color del texto y el ícono
+                          backgroundColor: AppStyles.thirdColor, // Color de fondo azul
+                          foregroundColor: Colors.white, // Color del texto y el ícono
+                        ),
+                      ),
+                      const SizedBox(height: 16), // Space between buttons
+                      ElevatedButton.icon(
+                        onPressed: onNavigateToProfile,
+                        icon: const Icon(Icons.cloud_download_rounded, size: 28),
+                        label: const Text(
+                          "Sincronización",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0, vertical: 12.0),
+                          backgroundColor: AppStyles.thirdColor, // Color de fondo azul
+                          foregroundColor: Colors.white, // Color del texto y el ícono
                         ),
                       ),
                     ],
@@ -81,27 +114,11 @@ class ProfilePage extends StatelessWidget {
                     style: TextStyle(fontSize: 15, color: Colors.redAccent),
                   ),
                   const SizedBox(height: 20),
-                  // Botón de Logout
-                  ElevatedButton(
-                    
-                    onPressed: () {
-                      loginController.clearToken();
-                      routeController.clearRoutes();
-                      profileController.clearAllData(); // Llamar al método de logout
-                      Get.offAll(() => const MainView()); // Redirigir al login
-                    },
-                    // ignore: sort_child_properties_last
-                    child: const Text("Cerrar sesión", style: TextStyle(fontSize: 18, color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppStyles.thirdColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                    ),
-                  ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

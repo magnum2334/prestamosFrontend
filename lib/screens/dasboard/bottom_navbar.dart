@@ -41,6 +41,13 @@ class _BottomBarState extends State<BottomBar> {
     }
   }
 
+  void goToProfileTab() {
+    setState(() {
+      _selectedIndex = 2; // Índice de la pestaña de Perfil
+    });
+    data();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,11 +71,13 @@ class _BottomBarState extends State<BottomBar> {
   Widget _getSelectedWidget() {
     switch (_selectedIndex) {
       case 0:
-        return RoutesWidget(); // Pestaña de estadísticas
+        return RoutesWidget(); // Pestaña de rutas
       case 1:
-        return const StatisticsScreen(); // Pestaña de rutas
+        return const StatisticsScreen(); // Pestaña de estadísticas
       case 2:
-        return const ProfilePage(); // Pestaña de perfil
+        return ProfilePage(
+          onNavigateToProfile: goToProfileTab, // Pasamos la función como parámetro
+        ); // Pestaña de perfil
       default:
         return Container();
     }

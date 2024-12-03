@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:stikev/database/tables/table_profile.dart';
+import 'package:stikev/database/tables/table_route.dart';
 
 class DBInitializer {
   static String get dbName => dotenv.env['DB']!;
@@ -18,10 +19,12 @@ class DBInitializer {
       onCreate: (db, version) async {
         // Crear tablas aquí
         await TableProfile.createTable(db);
+        await TableRoute.createTable(db);
       },
       onOpen: (db) async {
         // Verificar y agregar columnas faltantes cada vez que la base de datos se abre
         await TableProfile.verifyAndAddMissingColumns(db);
+        await TableRoute.verifyAndAddMissingColumns(db);
       },
     );
   }

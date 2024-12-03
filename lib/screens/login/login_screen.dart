@@ -23,7 +23,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final LoginController _loginController = Get.put(LoginController());
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _rutaController = TextEditingController();
+
+  final ProfileController _profileController = Get.put(ProfileController());
+  final RouteController _routeController = Get.put(RouteController());
   bool isLoading = false; // Variable para manejar el estado de carga
 
   Future<void> _login() async {
@@ -56,6 +58,11 @@ class _LoginScreenState extends State<LoginScreen> {
         String accessToken = jsonResponse['accessToken'];
         _loginController.setToken(accessToken); // Guarda el token
         // Navegar a la siguiente página
+        final profile = await _profileController
+          .fetchUserProfile(_loginController.token.toString());
+        await _routeController.fetchRoutesByCobrador(
+          _loginController.token.toString(), profile['user']['id']);
+
         widget.controller.animateToPage(
           1,
           duration: const Duration(milliseconds: 500),
