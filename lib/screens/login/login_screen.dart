@@ -70,7 +70,8 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         // Acción en caso de fallo
-        AlertHelper.showErrorAlert(context, ' ${response.statusCode}');
+        // ignore: use_build_context_synchronously
+        AlertHelper.showErrorAlert(context, ' ${response.body}');
       }
     } catch (e) {
       print("error login " + e.toString());

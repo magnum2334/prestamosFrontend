@@ -39,8 +39,9 @@ class _ClienteFormState extends State<ClienteForm> {
   final LoginController loginController = Get.put(LoginController());
   final ClientesController clientesController = Get.put(ClientesController());
   final List<int> cuotasOptions = List<int>.generate(30, (index) => index + 1);
-  int selectedCuotas = 0;
+  int selectedCuotas = 1;
   double totalAPagar = 0.0;
+  bool _isLoading = false;
 
   final NumberFormat currencyFormatter =
       NumberFormat.currency(locale: 'es_ES', symbol: '\$', decimalDigits: 0);
@@ -63,52 +64,69 @@ class _ClienteFormState extends State<ClienteForm> {
 
   // Añade esta función en la clase _ClienteFormState
   Future<void> enviarDatos() async {
-           // Validar que el nombre no esté vacío
-      if (nombreController.text.isEmpty) {
-        Get.snackbar('Error', 'El nombre es obligatorio.',
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-        return; // Evita continuar si el nombre no está presente
-      }
+    // Validar que el nombre no esté vacío
+    if (nombreController.text.isEmpty) {
+      Get.snackbar('Error', 'El nombre es obligatorio.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+      return; // Evita continuar si el nombre no está presente
+    }
 
-      // Validar que el valor prestado no sea vacío o no válido
-      int valorPrestado = int.tryParse(valorPrestadoController.text.replaceAll('.', '')) ?? 0;
-      if (valorPrestado == 0) {
-        Get.snackbar('Error', 'El valor prestado es obligatorio y debe ser un número válido.',
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-        return; // Evita continuar si el valor prestado es inválido
-      }
+    // Validar que el valor prestado no sea vacío o no válido
+    int valorPrestado =
+        int.tryParse(valorPrestadoController.text.replaceAll('.', '')) ?? 0;
+    if (valorPrestado == 0) {
+      Get.snackbar('Error',
+          'El valor prestado es obligatorio y debe ser un número válido.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+      return; // Evita continuar si el valor prestado es inválido
+    }
 
-      // Validar que el interés no sea vacío o no válido
-      int interes = int.tryParse(interesController.text) ?? 0;
-      if (interes == 0) {
-        Get.snackbar('Error', 'El interés es obligatorio y debe ser un número válido.',
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-        return; // Evita continuar si el interés es inválido
-      }
+    // Validar que el interés no sea vacío o no válido
+    int interes = int.tryParse(interesController.text) ?? 0;
+    if (interes == 0) {
+      Get.snackbar(
+          'Error', 'El interés es obligatorio y debe ser un número válido.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+      return; // Evita continuar si el interés es inválido
+    }
 
-      // Validar que se haya seleccionado una cantidad de cuotas
-      if (selectedCuotas == null || selectedCuotas <= 0) {
-        Get.snackbar('Error', 'Debe seleccionar una cantidad válida de cuotas.',
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-        return; // Evita continuar si no se seleccionó una cantidad válida de cuotas
-      }
+    // Validar que se haya seleccionado una cantidad de cuotas
+    if (selectedCuotas == null || selectedCuotas <= 0) {
+      Get.snackbar('Error', 'Debe seleccionar una cantidad válida de cuotas.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+      return; // Evita continuar si no se seleccionó una cantidad válida de cuotas
+    }
 
-      // Validar que se haya seleccionado una frecuencia
-      if (selectedFrecuencia == null ) {
-        Get.snackbar('Error', 'Debe seleccionar una frecuencia.',
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
-        return; // Evita continuar si no se seleccionó una frecuencia
-      }
+    // Validar que se haya seleccionado una frecuencia
+    if (selectedFrecuencia == null) {
+      Get.snackbar('Error', 'Debe seleccionar una frecuencia.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
+      return; // Evita continuar si no se seleccionó una frecuencia
+    }
+    // Inicia el spinner
+    setState(() {
+      _isLoading = true;
+    });
 
-        final ProfileController profileController = Get.find();
-        // Crea un mapa con los datos del cliente
-        final Map<String, dynamic> cliente = {
-          'nombre': nombreController.text,
-          'identificacion': identificacionController.text,
-          'telefono': telefonoController.text,
-          'direccion': direccionController.text,
-          'rutaId': widget.routeId,
-        };
+    final ProfileController profileController = Get.find();
+    // Crea un mapa con los datos del cliente
+    final Map<String, dynamic> cliente = {
+      'nombre': nombreController.text,
+      'identificacion': identificacionController.text,
+      'telefono': telefonoController.text,
+      'direccion': direccionController.text,
+      'rutaId': widget.routeId,
+    };
 
     // Cálculo del monto de cada cuota
     double interesTotal = (valorPrestado * interes / 100);
@@ -139,6 +157,7 @@ class _ClienteFormState extends State<ClienteForm> {
       'cobradorId': profileController.userId.value,
       'frecuencia': selectedFrecuencia,
       'interes': interes,
+      'fecha_creacion': DateFormat('yyyy-MM-dd').format(DateTime.now()),
     };
 
     // Combina los datos en un solo mapa con las llaves cliente y prestamo
@@ -151,29 +170,41 @@ class _ClienteFormState extends State<ClienteForm> {
     // Convertir el mapa a JSON
     final String jsonData = jsonEncode(data);
     debugPrint(AppConfig.clientApiUrl);
-    debugPrint("${loginController.token}" );
-    
-      final response = await http.post(
-        Uri.parse(AppConfig.clientApiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${loginController.token}',
-        },
-        body: jsonData,
+    debugPrint("${loginController.token}");
+
+    final response = await http.post(
+      Uri.parse(AppConfig.clientApiUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${loginController.token}',
+      },
+      body: jsonData,
+    );
+
+    if (response.statusCode == 201) {
+      setState(() {
+        _isLoading = false; // Desactiva el estado de carga
+      });
+      // Si la respuesta es exitosa, manejar la respuesta aquí
+      clientesController.fetchPrestamos(
+        AppConfig.rutaPrestamoApiUrl(widget.routeId.toString()),
+        loginController.token.value,
       );
-      print(response.statusCode);
-      if (response.statusCode == 201) {
-        // Si la respuesta es exitosa, manejar la respuesta aquí
-        clientesController.fetchPrestamos(
-          AppConfig.rutaPrestamoApiUrl(widget.routeId.toString()),
-          loginController.token.value,
-        );
-        Get.back();
-      } else {
-        // Manejar errores de la respuesta
-        debugPrint('Error al enviar los datos: ${response.statusCode}');
-      }
-   
+      Get.back();
+    } else {
+      // Manejar errores de la respuesta
+      debugPrint('Error al enviar los datos: ${response.body}');
+      Get.snackbar(
+        'Error',
+        'No se pudo crear el cliente.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      setState(() {
+        _isLoading = false; // Desactiva el estado de carga
+      });
+    }
   }
 
   void _calcularTotal() {
@@ -298,6 +329,9 @@ class _ClienteFormState extends State<ClienteForm> {
                 keyboardType: TextInputType.number,
                 prefixIcon: const Icon(Icons.percent),
                 height: 70,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(2),
+                ],
                 onChanged: (value) {
                   _calcularTotal();
                 },
@@ -317,7 +351,7 @@ class _ClienteFormState extends State<ClienteForm> {
                   if (number == null || number < 1 || number > 30) {
                     return 'la cuota debe estar entre 1 y 30';
                   }
-                  return null; 
+                  return null;
                 },
               ),
               const SizedBox(height: 10),
@@ -428,9 +462,9 @@ class _ClienteFormState extends State<ClienteForm> {
                 ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  enviarDatos();
-                },
+                onPressed: _isLoading
+                    ? null // Desactiva el botón mientras está cargando
+                    : enviarDatos,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppStyles.thirdColor,
                   padding:
@@ -440,10 +474,19 @@ class _ClienteFormState extends State<ClienteForm> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: const Text(
-                  'Crear Cliente',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Crear Cliente',
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
             ],
           ),

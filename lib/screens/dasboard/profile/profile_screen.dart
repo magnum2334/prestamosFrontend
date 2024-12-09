@@ -29,7 +29,7 @@ class ProfilePage extends StatelessWidget {
             onPressed: () {
               loginController.clearToken();
               routeController.clearRoutes();
-              profileController.clearAllData(); // Llamar al método de logout
+              profileController.clearAllData(); 
               Get.offAll(() => const MainView()); // Redirigir al login
             },
           ),
@@ -39,9 +39,9 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           children: [
             // Top portion section with a fixed height
-            SizedBox(
+            const SizedBox(
               height: 250, // Adjust based on your design
-              child: const _TopPortion(),
+              child: _TopPortion(),
             ),
             // Main profile content
             Padding(
@@ -203,8 +203,8 @@ class _TopPortion extends StatelessWidget {
         Align(
           alignment: Alignment.bottomCenter,
           child: SizedBox(
-            width: 150,
-            height: 150,
+            width: 225,
+            height: 225,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -214,8 +214,7 @@ class _TopPortion extends StatelessWidget {
                     shape: BoxShape.circle,
                     image: DecorationImage(
                         fit: BoxFit.cover,
-                        image: NetworkImage(
-                            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=1470&q=80')),
+                        image:AssetImage('assets/images/profile.png')),
                   ),
                 ),
                 Positioned(

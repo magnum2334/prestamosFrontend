@@ -7,20 +7,25 @@ import 'package:stikev/screens/dasboard/routes/clients/clients_screen.dart';
 import 'package:stikev/screens/dasboard/routes/clients/widget/gasto_screen.dart';
 import 'package:stikev/utils/main_style.dart';
 
+
+
 class RoutesWidget extends StatefulWidget {
+  final List<dynamic> routes; // Recibe las rutas como parámetro
+
+  const RoutesWidget({Key? key, required this.routes}) : super(key: key);
+
   @override
   _RoutesWidgetState createState() => _RoutesWidgetState();
 }
 
 class _RoutesWidgetState extends State<RoutesWidget> {
-  late List<dynamic> currentRoutes; // Lista para almacenar las rutas
+  late List<dynamic> currentRoutes;
 
   @override
   void initState() {
     super.initState();
-    // Inicializa currentRoutes con las rutas del controlador al inicio
-    final RouteController routeController = Get.find();
-    currentRoutes = routeController.routes(); // O la lógica para cargar las rutas
+    // Usa las rutas pasadas como parámetro
+    currentRoutes = widget.routes;
   }
 
   @override

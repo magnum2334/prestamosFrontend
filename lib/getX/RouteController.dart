@@ -31,7 +31,7 @@ class RouteController extends GetxController {
   }
 
   // Fetch routes from an API and store them in the local database
-  Future<void> fetchRoutesByCobrador(String token, int cobradorId) async {
+  fetchRoutesByCobrador(String token, int cobradorId) async {
     final url = AppConfig.rutaCobradorApiUrl(cobradorId.toString());
 
     final response = await http.get(

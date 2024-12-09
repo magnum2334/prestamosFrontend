@@ -65,6 +65,8 @@ class GastoController extends GetxController {
         );
 
         if (response.statusCode == 201) {
+          print(response.body);
+         
           Get.snackbar(
             'Éxito',
             'Gasto guardado correctamente',

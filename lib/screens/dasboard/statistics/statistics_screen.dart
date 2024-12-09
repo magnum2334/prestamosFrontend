@@ -45,10 +45,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   void initState() {
     super.initState();
-    final hoy = DateTime.now();
-    fechaInicioController.text = hoy.toIso8601String().split('T').first;
-    fechaFinController.text = hoy.toIso8601String().split('T').first;
-    fetchData();
+    if(mounted){
+        final hoy = DateTime.now();
+        fechaInicioController.text = hoy.toIso8601String().split('T').first;
+        fechaFinController.text = hoy.toIso8601String().split('T').first;
+        fetchData();
+    }
   }
 
   Future<void> fetchData() async {
@@ -413,7 +415,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: ListTile(
         leading: const Icon(Icons.payment, color: Colors.green),
         title: Text(
-            "Ruta: ${abono['prestamo']['ruta']['nombre'].toString()}\nCliente: ${abono['prestamo']['Cliente']['nombre'].toString()}\nMonto:${abono['monto'].toString()}\n ",
+            "Ruta: ${abono['prestamo']['ruta']['nombre'].toString()}\nCliente: ${abono['prestamo']['Cliente']['nombre'].toString()}\nMonto: \$${ currencyFormatter.format(abono['monto']).replaceAll('\$', '')}\n ",
             style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle:
             Text("fecha: ${abono['fecha'].replaceAll('T', ' ').split('.')[0]}"),

@@ -394,7 +394,8 @@ class PayModal {
 
     var body = {
       'abono': data.toString(),
-      'usuarioId': profileController.userId.toString()
+      'usuarioId': profileController.userId.toString(),
+      'fecha_creacion': DateFormat('yyyy-MM-dd').format(DateTime.now()),
     };
     final String jsonData = jsonEncode(body);
     

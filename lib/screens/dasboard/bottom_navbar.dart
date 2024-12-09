@@ -4,6 +4,7 @@ import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/getX/RouteController.dart';
+import 'package:stikev/screens/dasboard/manager_position/manager_position.dart';
 import 'package:stikev/screens/dasboard/profile/profile_screen.dart';
 import 'package:stikev/screens/dasboard/routes/route_screen.dart';
 import 'package:stikev/screens/dasboard/statistics/statistics_screen.dart';
@@ -19,7 +20,7 @@ class BottomBar extends StatefulWidget {
 
 class _BottomBarState extends State<BottomBar> {
   int _selectedIndex = 0;
-
+  late List<dynamic> currentRoutes = []; 
   final LoginController _loginController = Get.put(LoginController());
   final ProfileController _profileController = Get.put(ProfileController());
   final RouteController _routeController = Get.put(RouteController());
@@ -31,14 +32,17 @@ class _BottomBarState extends State<BottomBar> {
   }
 
   Future<void> data() async {
-    try {
+   if(mounted){
+     try {
       final profile = await _profileController
           .fetchUserProfile(_loginController.token.toString());
       await _routeController.fetchRoutesByCobrador(
           _loginController.token.toString(), profile['user']['id']);
+     currentRoutes = _routeController.routes();
     } catch (e) {
       debugPrint("debug: ${_profileController.userId}");
     }
+   }
   }
 
   void goToProfileTab() {
@@ -71,13 +75,11 @@ class _BottomBarState extends State<BottomBar> {
   Widget _getSelectedWidget() {
     switch (_selectedIndex) {
       case 0:
-        return RoutesWidget(); // Pestaña de rutas
+      return ProfilePage(onNavigateToProfile: goToProfileTab);
       case 1:
-        return const StatisticsScreen(); // Pestaña de estadísticas
+        return RoutesWidget(routes: currentRoutes);
       case 2:
-        return ProfilePage(
-          onNavigateToProfile: goToProfileTab, // Pasamos la función como parámetro
-        ); // Pestaña de perfil
+        return const StatisticsScreen();
       default:
         return Container();
     }
@@ -85,6 +87,11 @@ class _BottomBarState extends State<BottomBar> {
 }
 
 final _navBarItems = [
+   SalomonBottomBarItem(
+    icon: const Icon(Icons.person),
+    title: const Text("Perfil"),
+    selectedColor: AppStyles.thirdColor, // Color de fondo azul
+  ),
   SalomonBottomBarItem(
     icon: const Icon(Icons.home),
     title: const Text("Rutas"),
@@ -94,9 +101,5 @@ final _navBarItems = [
       icon: const Icon(Icons.bar_chart),
       title: const Text("Estadísticas"),
       selectedColor: AppStyles.thirdColor),
-  SalomonBottomBarItem(
-    icon: const Icon(Icons.person),
-    title: const Text("Perfil"),
-    selectedColor: AppStyles.thirdColor, // Color de fondo azul
-  ),
+ 
 ];
