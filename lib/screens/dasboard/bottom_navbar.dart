@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:stikev/getX/LoginController.dart';
 import 'package:stikev/getX/ProfileController.dart';
 import 'package:stikev/getX/RouteController.dart';
-import 'package:stikev/screens/dasboard/manager_position/manager_position.dart';
+import 'package:stikev/screens/dasboard/manager_position/map_screen.dart';
 import 'package:stikev/screens/dasboard/profile/profile_screen.dart';
 import 'package:stikev/screens/dasboard/routes/route_screen.dart';
 import 'package:stikev/screens/dasboard/statistics/statistics_screen.dart';
+import 'package:stikev/service/socket_service.dart';
 import 'package:stikev/utils/main_style.dart';
 
 class BottomBar extends StatefulWidget {
@@ -39,6 +41,10 @@ class _BottomBarState extends State<BottomBar> {
       await _routeController.fetchRoutesByCobrador(
           _loginController.token.toString(), profile['user']['id']);
      currentRoutes = _routeController.routes();
+    //SocketService socketService = SocketService(token:  _profileController.token.toString(), userId: _profileController.userId.toString());
+    // Conectar al WebSocket
+    // socketService.connect();
+    // socketService.listenToEvents(_profileController.userId.toString());
     } catch (e) {
       debugPrint("debug: ${_profileController.userId}");
     }
@@ -72,10 +78,10 @@ class _BottomBarState extends State<BottomBar> {
     );
   }
 
-  Widget _getSelectedWidget() {
+ Widget _getSelectedWidget() {
     switch (_selectedIndex) {
       case 0:
-      return ProfilePage(onNavigateToProfile: goToProfileTab);
+        return ProfilePage(onNavigateToProfile: goToProfileTab);
       case 1:
         return RoutesWidget(routes: currentRoutes);
       case 2:
@@ -101,5 +107,4 @@ final _navBarItems = [
       icon: const Icon(Icons.bar_chart),
       title: const Text("Estadísticas"),
       selectedColor: AppStyles.thirdColor),
- 
 ];
